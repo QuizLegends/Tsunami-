@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI | Stress Test Panel</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00ffff; /* Ciano Hacker */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #panel {
+            border: 2px solid #ffd700; /* Borda Dourada */
+            padding: 20px;
+            box-shadow: 0 0 15px #00ffff;
+            background: rgba(0, 20, 20, 0.8);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            text-shadow: 2px 2px #ff0000;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+        }
+
+        .status-box {
+            border: 1px solid #00ffff;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.8em;
+            background: #000;
+        }
+
+        input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #00ffff;
+            color: #ffd700;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #00ffff;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #ffd700;
+            box-shadow: 0 0 20px #ffd700;
+        }
+
+        #log {
+            height: 100px;
+            overflow-y: auto;
+            color: #00ff00; /* Verde Terminal */
+            font-size: 0.7em;
+            margin-top: 10px;
+        }
+
+        .warning { color: #ff0000; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="panel">
+    <h1>TSUNAMI</h1>
+    <div class="status-box">
+        STATUS: <span id="engine-status">IDLE</span><br>
+        REQUISITOS/SEG: <span id="rps">0</span>
+    </div>
+
+    <input type="text" id="target" placeholder="URL DO ALVO (ex: http://127.0.0.1:5500)">
+    
+    <button onclick="toggleTsunami()" id="btn-main">Iniciar Onda</button>
+
+    <div id="log">
+        [SISTEMA]: Aguardando coordenadas...
+    </div>
+</div>
+
+<script src="engine.js"></script>
+</body>
+</html>
