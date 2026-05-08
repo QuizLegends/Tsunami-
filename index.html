@@ -7,7 +7,7 @@
     <style>
         body {
             background-color: #000;
-            color: #00ffff; /* Ciano Hacker */
+            color: #00ffff;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
@@ -19,7 +19,7 @@
         }
 
         #panel {
-            border: 2px solid #ffd700; /* Borda Dourada */
+            border: 2px solid #ffd700;
             padding: 20px;
             box-shadow: 0 0 15px #00ffff;
             background: rgba(0, 20, 20, 0.8);
@@ -41,6 +41,15 @@
             margin: 10px 0;
             font-size: 0.8em;
             background: #000;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px dashed #00ffff;
+            color: #ffd700;
         }
 
         input {
@@ -74,7 +83,7 @@
         #log {
             height: 100px;
             overflow-y: auto;
-            color: #00ff00; /* Verde Terminal */
+            color: #00ff00;
             font-size: 0.7em;
             margin-top: 10px;
         }
@@ -89,9 +98,14 @@
     <div class="status-box">
         STATUS: <span id="engine-status">IDLE</span><br>
         REQUISITOS/SEG: <span id="rps">0</span>
+        
+        <div class="stats-row">
+            <span>TOTAL: <span id="total-hits">0</span></span>
+            <span>TEMPO: <span id="timer">00:00</span></span>
+        </div>
     </div>
 
-    <input type="text" id="target" placeholder="URL DO ALVO (ex: http://127.0.0.1:5500)">
+    <input type="text" id="target" placeholder="URL DO ALVO">
     
     <button onclick="toggleTsunami()" id="btn-main">Iniciar Onda</button>
 
