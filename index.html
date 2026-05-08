@@ -25,6 +25,7 @@
             background: rgba(0, 20, 20, 0.8);
             width: 90%;
             max-width: 400px;
+            transition: all 0.5s ease; /* Suaviza a mudança de cores */
         }
 
         h1 {
@@ -41,6 +42,7 @@
             margin: 10px 0;
             font-size: 0.8em;
             background: #000;
+            line-height: 1.6;
         }
 
         .stats-row {
@@ -89,6 +91,7 @@
         }
 
         .warning { color: #ff0000; font-weight: bold; }
+        .latency-text { color: #ffd700; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -97,7 +100,8 @@
     <h1>TSUNAMI</h1>
     <div class="status-box">
         STATUS: <span id="engine-status">IDLE</span><br>
-        REQUISITOS/SEG: <span id="rps">0</span>
+        REQUISITOS/SEG: <span id="rps">0</span><br>
+        LATÊNCIA: <span id="latency" class="latency-text">0ms</span>
         
         <div class="stats-row">
             <span>TOTAL: <span id="total-hits">0</span></span>
