@@ -342,6 +342,49 @@
       font-weight: bold;
     }
 
+    /* Estilos do Perfil de Usuário */
+    .profile-info-group {
+      background: var(--dark-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .profile-info-item {
+      margin-bottom: 0.8rem;
+    }
+    .profile-info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .profile-info-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .profile-info-value {
+      font-size: 1rem;
+      color: var(--text-main);
+      font-weight: 500;
+      margin-top: 0.2rem;
+      word-break: break-all;
+    }
+
+    .btn-edit-trigger {
+      color: var(--primary-blue);
+      background: transparent;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: underline;
+      display: inline-block;
+      margin-bottom: 1.2rem;
+    }
+
     footer {
       background: var(--dark-card);
       border-top: 1px solid var(--border-color);
@@ -473,12 +516,39 @@
       <div id="profileFormContainer" style="display: none;">
         <h2 class="modal-title">Meu Perfil</h2>
         
-        <form id="formProfile">
-          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome (Público)</label>
-          <input type="text" id="profName" class="form-input" placeholder="Seu Nome e Sobrenome" required />
+        <!-- VISUALIZAÇÃO DOS DADOS -->
+        <div id="profileView">
+          <div class="profile-info-group">
+            <div class="profile-info-item">
+              <div class="profile-info-label">Nome de Usuário</div>
+              <div class="profile-info-value" id="viewName">-</div>
+            </div>
+            <div class="profile-info-item">
+              <div class="profile-info-label">E-mail</div>
+              <div class="profile-info-value" id="viewEmail">-</div>
+            </div>
+            <div class="profile-info-item">
+              <div class="profile-info-label">WhatsApp</div>
+              <div class="profile-info-value" id="viewPhone">-</div>
+            </div>
+            <div class="profile-info-item">
+              <div class="profile-info-label">Cidade / Endereço</div>
+              <div class="profile-info-value" id="viewCity">-</div>
+            </div>
+          </div>
+
+          <div style="text-align: center;">
+            <button id="btnEnableEdit" class="btn-edit-trigger">✏️ Editar Perfil</button>
+          </div>
+        </div>
+
+        <!-- FORMULÁRIO DE EDIÇÃO (OCULTO POR PADRÃO) -->
+        <form id="formProfile" style="display: none;">
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome</label>
+          <input type="text" id="profName" class="form-input" required />
 
           <label style="font-size: 0.85rem; color: var(--text-muted);">E-mail</label>
-          <input type="email" id="profEmail" class="form-input" placeholder="Seu E-mail" required />
+          <input type="email" id="profEmail" class="form-input" required />
 
           <label style="font-size: 0.85rem; color: var(--text-muted);">WhatsApp / Telefone</label>
           <input type="tel" id="profPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
@@ -489,10 +559,14 @@
           <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
             Salvar Alterações
           </button>
+          
+          <button type="button" id="btnCancelEdit" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+            Cancelar
+          </button>
         </form>
 
         <!-- ÚNICA OPÇÃO DE SAIR DA CONTA -->
-        <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1rem; border-color: var(--primary-red); color: var(--primary-red);">
+        <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1.5rem; border-color: var(--primary-red); color: var(--primary-red);">
           Sair da Conta
         </button>
       </div>
@@ -565,6 +639,11 @@
     const registerFormContainer = document.getElementById('registerFormContainer');
     const profileFormContainer = document.getElementById('profileFormContainer');
     
+    const profileView = document.getElementById('profileView');
+    const formProfile = document.getElementById('formProfile');
+    const btnEnableEdit = document.getElementById('btnEnableEdit');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+
     const linkToRegister = document.getElementById('linkToRegister');
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
@@ -577,10 +656,27 @@
 
       if (tab === 'login') loginFormContainer.style.display = 'block';
       if (tab === 'register') registerFormContainer.style.display = 'block';
-      if (tab === 'profile') profileFormContainer.style.display = 'block';
+      if (tab === 'profile') {
+        profileFormContainer.style.display = 'block';
+        showProfileMode('view'); // Abre no modo visualização
+      }
       
       authModal.style.display = 'flex';
     }
+
+    function showProfileMode(mode) {
+      if (mode === 'edit') {
+        profileView.style.display = 'none';
+        formProfile.style.display = 'block';
+      } else {
+        profileView.style.display = 'block';
+        formProfile.style.display = 'none';
+      }
+    }
+
+    // Eventos do perfil
+    btnEnableEdit.addEventListener('click', () => showProfileMode('edit'));
+    btnCancelEdit.addEventListener('click', () => showProfileMode('view'));
 
     // Processa retorno do login do Google
     getRedirectResult(auth)
@@ -620,7 +716,7 @@
 
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
-    // Único botão de Logout (na tela de perfil)
+    // Único botão de Logout
     btnLogoutModal.addEventListener('click', () => {
       signOut(auth);
       authModal.style.display = 'none';
@@ -690,7 +786,7 @@
       }
 
       if (containsForbiddenWords(rawName)) {
-        alert("O nome digitado contém palavras ou termos não permitidos. Escolha um nome adequado.");
+        alert("O nome digitado contém palavras não permitidas.");
         return;
       }
 
@@ -742,18 +838,30 @@
 
         if (userSnap.exists()) {
           const data = userSnap.data();
-          document.getElementById('profName').value = data.name || auth.currentUser.displayName || '';
-          document.getElementById('profEmail').value = data.email || auth.currentUser.email || '';
-          document.getElementById('profPhone').value = data.phone || '';
-          document.getElementById('profCity').value = data.city || '';
+          const name = data.name || auth.currentUser.displayName || 'Não informado';
+          const email = data.email || auth.currentUser.email || 'Não informado';
+          const phone = data.phone || 'Não informado';
+          const city = data.city || 'Não informado';
+
+          // Atualizar tela de visualização
+          document.getElementById('viewName').textContent = name;
+          document.getElementById('viewEmail').textContent = email;
+          document.getElementById('viewPhone').textContent = phone;
+          document.getElementById('viewCity').textContent = city;
+
+          // Preencher formulário de edição
+          document.getElementById('profName').value = name;
+          document.getElementById('profEmail').value = email;
+          document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
+          document.getElementById('profCity').value = city === 'Não informado' ? '' : city;
         }
       } catch (error) {
         console.error("Erro ao carregar o perfil:", error);
       }
     }
 
-    // Salvar Atualizações do Perfil (Nome, E-mail, Telefone e Cidade)
-    document.getElementById('formProfile').addEventListener('submit', async (e) => {
+    // Salvar Atualizações do Perfil
+    formProfile.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
       if (!user) return;
@@ -763,7 +871,6 @@
       const newPhone = document.getElementById('profPhone').value.trim();
       const newCity = document.getElementById('profCity').value.trim();
 
-      // Validação do Nome
       const nameParts = newNameRaw.split(/\s+/);
       if (nameParts.length < 2) {
         alert("Por favor, informe pelo menos o seu Nome e Sobrenome.");
@@ -784,7 +891,7 @@
           btnAuthModal.textContent = `👤 ${formattedName}`;
         }
 
-        // 2. Atualizar E-mail se tiver mudado
+        // 2. Atualizar E-mail se alterado
         if (newEmail !== user.email) {
           try {
             await verifyBeforeUpdateEmail(user, newEmail);
@@ -800,7 +907,7 @@
           }
         }
 
-        // 3. Atualizar no Firestore
+        // 3. Atualizar Firestore
         await updateDoc(doc(db, "users", user.uid), {
           name: formattedName,
           email: newEmail,
@@ -809,7 +916,8 @@
         });
 
         alert("Perfil atualizado com sucesso!");
-        authModal.style.display = 'none';
+        await loadUserProfile(user.uid);
+        showProfileMode('view');
       } catch (error) {
         console.error("Erro ao salvar perfil:", error);
         alert("Erro ao salvar perfil: " + error.message);
