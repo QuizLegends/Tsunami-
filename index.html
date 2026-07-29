@@ -510,19 +510,19 @@
           <div class="profile-info-group">
             <div class="profile-info-item">
               <div class="profile-info-label">Nome de Usuário</div>
-              <div class="profile-info-value" id="viewName">Carregando...</div>
+              <div class="profile-info-value" id="viewName">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">E-mail</div>
-              <div class="profile-info-value" id="viewEmail">Carregando...</div>
+              <div class="profile-info-value" id="viewEmail">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">WhatsApp</div>
-              <div class="profile-info-value" id="viewPhone">Carregando...</div>
+              <div class="profile-info-value" id="viewPhone">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">Cidade / Endereço</div>
-              <div class="profile-info-value" id="viewCity">Carregando...</div>
+              <div class="profile-info-value" id="viewCity">-</div>
             </div>
           </div>
 
@@ -631,7 +631,6 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
-    // Mudar abas com verificação de dados imediata
     async function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
       registerFormContainer.style.display = 'none';
@@ -663,7 +662,7 @@
     btnEnableEdit.addEventListener('click', () => showProfileMode('edit'));
     btnCancelEdit.addEventListener('click', () => showProfileMode('view'));
 
-    // Trata login via redirecionamento do Google
+    // Google Sign-In redirect result
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -676,7 +675,7 @@
               uid: user.uid,
               name: user.displayName || "Usuário Google",
               email: user.email,
-              city: "Não informada",
+              city: "",
               phone: "",
               rating: 5.0,
               tradesCount: 0,
@@ -701,10 +700,10 @@
     btnLogoutModal.addEventListener('click', async () => {
       await signOut(auth);
       authModal.style.display = 'none';
-      document.getElementById('viewName').textContent = 'Carregando...';
-      document.getElementById('viewEmail').textContent = 'Carregando...';
-      document.getElementById('viewPhone').textContent = 'Carregando...';
-      document.getElementById('viewCity').textContent = 'Carregando...';
+      document.getElementById('viewName').textContent = '-';
+      document.getElementById('viewEmail').textContent = '-';
+      document.getElementById('viewPhone').textContent = '-';
+      document.getElementById('viewCity').textContent = '-';
     });
 
     linkToRegister.addEventListener('click', (e) => {
@@ -717,13 +716,11 @@
       showModalTab('login');
     });
 
-    // Monitor do Estado de Autenticação com carregamento garantido
+    // Escutador principal de autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         authElements.forEach(el => el.style.display = 'inline-flex');
         authModal.style.display = 'none';
-        
-        // Carrega dados diretamente da coleção do usuário
         await loadUserProfile(user.uid);
       } else {
         btnAuthModal.textContent = "Entrar / Cadastrar";
@@ -731,7 +728,7 @@
       }
     });
 
-    // Submeter Login
+    // Login
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
@@ -744,7 +741,7 @@
       }
     });
 
-    // Submeter Cadastro
+    // Cadastro
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('regName').value.trim();
@@ -805,7 +802,7 @@
       }
     });
 
-    // Função de carregamento que garante que o Firestore e Auth estejam sincronizados
+    // Função de carregamento que garante o tratamento de campos ausentes
     async function loadUserProfile(userId) {
       if (!userId) return;
 
@@ -817,24 +814,24 @@
 
         let data = userSnap.exists() ? userSnap.data() : {};
 
-        // Resgates de segurança caso algum campo no banco venha vazio
-        const name = data.name || (currentUser ? currentUser.displayName : '') || 'Não informado';
-        const email = data.email || (currentUser ? currentUser.email : '') || 'Não informado';
-        const phone = data.phone || 'Não informado';
-        const city = data.city || 'Não informado';
+        // Se o dado não existir no Firestore, puxa fallback e trata strings vazias
+        const name = (data.name && data.name.trim() !== '') ? data.name : (currentUser ? currentUser.displayName : '') || 'Não informado';
+        const email = (data.email && data.email.trim() !== '') ? data.email : (currentUser ? currentUser.email : '') || 'Não informado';
+        const phone = (data.phone && data.phone.trim() !== '') ? data.phone : 'Não informado';
+        const city = (data.city && data.city.trim() !== '') ? data.city : 'Não informado';
 
-        // Atualização da Interface
+        // Atualização da Interface (Troca imediata de qualquer texto estático)
         btnAuthModal.textContent = `👤 ${name}`;
         document.getElementById('viewName').textContent = name;
         document.getElementById('viewEmail').textContent = email;
         document.getElementById('viewPhone').textContent = phone;
         document.getElementById('viewCity').textContent = city;
 
-        // Preenchimento dos inputs de Edição
-        document.getElementById('profName').value = name === 'Não informado' ? '' : name;
-        document.getElementById('profEmail').value = email === 'Não informado' ? '' : email;
-        document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
-        document.getElementById('profCity').value = city === 'Não informado' ? '' : city;
+        // Preenchimento dos inputs de Edição (deixa limpo se for "Não informado")
+        document.getElementById('profName').value = (name === 'Não informado') ? '' : name;
+        document.getElementById('profEmail').value = (email === 'Não informado') ? '' : email;
+        document.getElementById('profPhone').value = (phone === 'Não informado') ? '' : phone;
+        document.getElementById('profCity').value = (city === 'Não informado') ? '' : city;
 
       } catch (error) {
         console.error("Erro ao carregar o perfil:", error);
@@ -843,11 +840,13 @@
           btnAuthModal.textContent = `👤 ${fallbackName}`;
           document.getElementById('viewName').textContent = fallbackName;
           document.getElementById('viewEmail').textContent = currentUser.email || 'Não informado';
+          document.getElementById('viewPhone').textContent = 'Não informado';
+          document.getElementById('viewCity').textContent = 'Não informado';
         }
       }
     }
 
-    // Salvar Atualizações do Perfil
+    // Salvar Alterações do Perfil
     formProfile.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -891,6 +890,7 @@
           }
         }
 
+        // Garante a gravação dos novos dados no Firestore
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: formattedName,
