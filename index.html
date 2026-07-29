@@ -521,19 +521,19 @@
           <div class="profile-info-group">
             <div class="profile-info-item">
               <div class="profile-info-label">Nome de Usuário</div>
-              <div class="profile-info-value" id="viewName">Carregando...</div>
+              <div class="profile-info-value" id="viewName">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">E-mail</div>
-              <div class="profile-info-value" id="viewEmail">Carregando...</div>
+              <div class="profile-info-value" id="viewEmail">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">WhatsApp</div>
-              <div class="profile-info-value" id="viewPhone">Carregando...</div>
+              <div class="profile-info-value" id="viewPhone">-</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">Cidade / Endereço</div>
-              <div class="profile-info-value" id="viewCity">Carregando...</div>
+              <div class="profile-info-value" id="viewCity">-</div>
             </div>
           </div>
 
@@ -649,7 +649,7 @@
     const authElements = document.querySelectorAll('.auth-only');
 
     // Troca de Abas do Modal
-    function showModalTab(tab) {
+    async function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
       registerFormContainer.style.display = 'none';
       profileFormContainer.style.display = 'none';
@@ -657,6 +657,9 @@
       if (tab === 'login') loginFormContainer.style.display = 'block';
       if (tab === 'register') registerFormContainer.style.display = 'block';
       if (tab === 'profile') {
+        if (auth.currentUser) {
+          await loadUserProfile(auth.currentUser.uid);
+        }
         profileFormContainer.style.display = 'block';
         showProfileMode('view');
       }
@@ -698,7 +701,6 @@
               createdAt: new Date().toISOString()
             });
           }
-          await loadUserProfile(user.uid);
         }
       })
       .catch((error) => {
@@ -706,9 +708,8 @@
       });
 
     // Clique no botão principal do cabeçalho
-    btnAuthModal.addEventListener('click', async () => {
+    btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
-        await loadUserProfile(auth.currentUser.uid);
         showModalTab('profile');
       } else {
         showModalTab('login');
@@ -717,7 +718,7 @@
 
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
-    // Único botão de Logout
+    // Botão de Logout
     btnLogoutModal.addEventListener('click', () => {
       signOut(auth);
       authModal.style.display = 'none';
@@ -736,7 +737,19 @@
     // Monitor do Estado de Autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await loadUserProfile(user.uid);
+        let displayName = user.displayName;
+
+        try {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists() && userSnap.data().name) {
+            displayName = userSnap.data().name;
+          }
+        } catch (e) {
+          console.error("Erro ao obter nome do usuário:", e);
+        }
+
+        const nameToDisplay = displayName || "Usuário";
+        btnAuthModal.textContent = `👤 ${nameToDisplay}`;
         authElements.forEach(el => el.style.display = 'inline-flex');
         authModal.style.display = 'none';
       } else {
@@ -751,8 +764,7 @@
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
       try {
-        const userCred = await signInWithEmailAndPassword(auth, email, pass);
-        await loadUserProfile(userCred.user.uid);
+        await signInWithEmailAndPassword(auth, email, pass);
       } catch (err) {
         alert("Erro no login: " + err.message);
       }
@@ -797,8 +809,6 @@
           createdAt: new Date().toISOString()
         });
 
-        await loadUserProfile(user.uid);
-
       } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
           alert("Este e-mail já está em uso. Redirecionando para login...");
@@ -820,42 +830,30 @@
       }
     });
 
-    // Carregar Informações do Perfil (Com fallback para Auth)
+    // Carregar Informações do Perfil
     async function loadUserProfile(userId) {
       try {
-        const currentUser = auth.currentUser;
-        let name = currentUser?.displayName || '';
-        let email = currentUser?.email || '';
-        let phone = '';
-        let city = '';
-
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
+        let data = {};
         if (userSnap.exists()) {
-          const data = userSnap.data();
-          name = data.name || name;
-          email = data.email || email;
-          phone = data.phone || '';
-          city = data.city || '';
+          data = userSnap.data();
         }
 
-        // Garante valores padrão legíveis
-        name = name || 'Não informado';
-        email = email || 'Não informado';
-        phone = phone || 'Não informado';
-        city = city || 'Não informado';
+        const currentUser = auth.currentUser;
+        const name = data.name || (currentUser ? currentUser.displayName : '') || 'Não informado';
+        const email = data.email || (currentUser ? currentUser.email : '') || 'Não informado';
+        const phone = data.phone || 'Não informado';
+        const city = data.city || 'Não informado';
 
-        // Atualizar Botão do Header
-        btnAuthModal.textContent = `👤 ${name}`;
-
-        // Atualizar Tela de Visualização
+        // Atualizar tela de visualização
         document.getElementById('viewName').textContent = name;
         document.getElementById('viewEmail').textContent = email;
         document.getElementById('viewPhone').textContent = phone;
         document.getElementById('viewCity').textContent = city;
 
-        // Preencher Formulário de Edição
+        // Preencher formulário de edição
         document.getElementById('profName').value = name === 'Não informado' ? '' : name;
         document.getElementById('profEmail').value = email === 'Não informado' ? '' : email;
         document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
@@ -894,6 +892,7 @@
         // 1. Atualizar Nome no Firebase Auth
         if (formattedName !== user.displayName) {
           await updateProfile(user, { displayName: formattedName });
+          btnAuthModal.textContent = `👤 ${formattedName}`;
         }
 
         // 2. Atualizar E-mail se alterado
@@ -912,13 +911,13 @@
           }
         }
 
-        // 3. Atualizar Firestore
-        await updateDoc(doc(db, "users", user.uid), {
+        // 3. Atualizar Firestore (uso do setDoc com merge: true)
+        await setDoc(doc(db, "users", user.uid), {
           name: formattedName,
           email: newEmail,
           phone: newPhone,
           city: newCity
-        });
+        }, { merge: true });
 
         alert("Perfil atualizado com sucesso!");
         await loadUserProfile(user.uid);
