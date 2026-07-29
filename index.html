@@ -201,6 +201,11 @@
       margin-bottom: 1rem;
     }
 
+    .form-input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     /* Grid de Anúncios */
     .container {
       max-width: 1200px;
@@ -287,7 +292,7 @@
       font-size: 0.85rem;
     }
 
-    /* MODAL DE AUTENTICAÇÃO */
+    /* MODAL DE AUTENTICAÇÃO E PERFIL */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -305,10 +310,12 @@
       border: 1px solid var(--border-color);
       border-radius: 16px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       padding: 2rem;
       position: relative;
       box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-close {
@@ -340,6 +347,31 @@
       font-weight: bold;
     }
 
+    /* Estilos do Perfil de Usuário */
+    .profile-avatar-container {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .profile-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary-blue);
+      background-color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+
+    .avatar-upload-btn {
+      display: inline-block;
+      color: var(--primary-blue);
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
     footer {
       background: var(--dark-card);
       border-top: 1px solid var(--border-color);
@@ -366,6 +398,7 @@
 
       <div class="nav-actions">
         <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
+        <button id="btnProfile" class="btn btn-outline auth-only">👤 Meu Perfil</button>
         <button id="btnAuthModal" class="btn btn-outline">Entrar / Cadastrar</button>
       </div>
     </div>
@@ -426,7 +459,7 @@
     </div>
   </main>
 
-  <!-- MODAL DE AUTENTICAÇÃO (LOGIN / CADASTRO) -->
+  <!-- MODAL PRINCIPAL (LOGIN / CADASTRO / PERFIL) -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseModal">&times;</button>
@@ -466,6 +499,41 @@
           Já tem conta? <a href="#" id="linkToLogin">Fazer Login</a>
         </p>
       </div>
+
+      <!-- ABA MEU PERFIL (NOVA SEÇÃO) -->
+      <div id="profileFormContainer" style="display: none;">
+        <h2 class="modal-title">Meu Perfil</h2>
+        
+        <div class="profile-avatar-container">
+          <img id="profileAvatar" class="profile-avatar" src="https://via.placeholder.com/110/121824/0088ff?text=Foto" alt="Foto de Perfil" />
+          <br />
+          <label for="filePhoto" class="avatar-upload-btn">Alterar Foto de Perfil</label>
+          <input type="file" id="filePhoto" accept="image/*" style="display: none;" />
+        </div>
+
+        <form id="formProfile">
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome</label>
+          <input type="text" id="profName" class="form-input" disabled />
+
+          <label style="font-size: 0.85rem; color: var(--text-muted);">E-mail</label>
+          <input type="email" id="profEmail" class="form-input" disabled />
+
+          <label style="font-size: 0.85rem; color: var(--text-muted);">WhatsApp / Telefone</label>
+          <input type="tel" id="profPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
+
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Cidade / Endereço</label>
+          <input type="text" id="profCity" class="form-input" placeholder="Ex: Jaboatão dos Guararapes" required />
+
+          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+            Salvar Alterações
+          </button>
+        </form>
+
+        <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1rem; border-color: var(--primary-red); color: var(--primary-red);">
+          Sair da Conta
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -487,7 +555,19 @@
       GoogleAuthProvider,
       signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      updateDoc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { 
+      getStorage, 
+      ref, 
+      uploadBytes, 
+      getDownloadURL 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
     // Configuração do Firebase
     const firebaseConfig = {
@@ -504,6 +584,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     // Lista de palavras proibidas (filtro de profanidades/palavrões)
     const FORBIDDEN_WORDS = [
@@ -520,12 +601,30 @@
     // Elementos da Interface
     const authModal = document.getElementById('authModal');
     const btnAuthModal = document.getElementById('btnAuthModal');
+    const btnProfile = document.getElementById('btnProfile');
     const btnCloseModal = document.getElementById('btnCloseModal');
+    const btnLogoutModal = document.getElementById('btnLogoutModal');
+    
     const loginFormContainer = document.getElementById('loginFormContainer');
     const registerFormContainer = document.getElementById('registerFormContainer');
+    const profileFormContainer = document.getElementById('profileFormContainer');
+    
     const linkToRegister = document.getElementById('linkToRegister');
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
+
+    // Função de Troca de Abas da Modal
+    function showModalTab(tab) {
+      loginFormContainer.style.display = 'none';
+      registerFormContainer.style.display = 'none';
+      profileFormContainer.style.display = 'none';
+
+      if (tab === 'login') loginFormContainer.style.display = 'block';
+      if (tab === 'register') registerFormContainer.style.display = 'block';
+      if (tab === 'profile') profileFormContainer.style.display = 'block';
+      
+      authModal.style.display = 'flex';
+    }
 
     // Processa o retorno do login do Google via Redirecionamento
     getRedirectResult(auth)
@@ -542,6 +641,7 @@
               email: user.email,
               photoURL: user.photoURL || "",
               city: "Não informada",
+              phone: "",
               rating: 5.0,
               tradesCount: 0,
               createdAt: new Date().toISOString()
@@ -553,32 +653,42 @@
         console.error("Erro no retorno do login Google:", error);
       });
 
-    // Controle da Modal
+    // Eventos da Modal e Navegação
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
         if (confirm("Deseja sair da sua conta?")) {
           signOut(auth);
         }
       } else {
-        authModal.style.display = 'flex';
+        showModalTab('login');
+      }
+    });
+
+    btnProfile.addEventListener('click', () => {
+      if (auth.currentUser) {
+        loadUserProfile(auth.currentUser.uid);
+        showModalTab('profile');
       }
     });
 
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
+    btnLogoutModal.addEventListener('click', () => {
+      signOut(auth);
+      authModal.style.display = 'none';
+    });
+
     linkToRegister.addEventListener('click', (e) => {
       e.preventDefault();
-      loginFormContainer.style.display = 'none';
-      registerFormContainer.style.display = 'block';
+      showModalTab('register');
     });
 
     linkToLogin.addEventListener('click', (e) => {
       e.preventDefault();
-      registerFormContainer.style.display = 'none';
-      loginFormContainer.style.display = 'block';
+      showModalTab('login');
     });
 
-    // Monitor do Estado de Autenticação (Exibição estritamente do Nome)
+    // Monitor do Estado de Autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         let displayName = user.displayName;
@@ -656,13 +766,20 @@
           email: email,
           city: city,
           phone: phone,
+          photoURL: "",
           rating: 5.0,
           tradesCount: 0,
           createdAt: new Date().toISOString()
         });
 
       } catch (err) {
-        alert("Erro ao cadastrar: " + err.message);
+        if (err.code === 'auth/email-already-in-use') {
+          alert("Este e-mail já está em uso. Redirecionando para login...");
+          showModalTab('login');
+          document.getElementById('loginEmail').value = email;
+        } else {
+          alert("Erro ao cadastrar: " + err.message);
+        }
       }
     });
 
@@ -675,6 +792,82 @@
         alert("Erro ao iniciar login com Google: " + err.message);
       }
     });
+
+    // --- CARREGAR E EDITAR DADOS DO PERFIL ---
+
+    async function loadUserProfile(userId) {
+      try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          document.getElementById('profName').value = data.name || auth.currentUser.displayName || '';
+          document.getElementById('profEmail').value = data.email || auth.currentUser.email || '';
+          document.getElementById('profPhone').value = data.phone || '';
+          document.getElementById('profCity').value = data.city || '';
+
+          if (data.photoURL) {
+            document.getElementById('profileAvatar').src = data.photoURL;
+          } else if (auth.currentUser.photoURL) {
+            document.getElementById('profileAvatar').src = auth.currentUser.photoURL;
+          } else {
+            document.getElementById('profileAvatar').src = "https://via.placeholder.com/110/121824/0088ff?text=Foto";
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do perfil:", error);
+      }
+    }
+
+    // Upload da Foto de Perfil no Firebase Storage
+    document.getElementById('filePhoto').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const user = auth.currentUser;
+
+      if (!file || !user) return;
+
+      try {
+        alert("Enviando imagem...");
+        const storageRef = ref(storage, `profile_photos/${user.uid}`);
+        await uploadBytes(storageRef, file);
+        const photoURL = await getDownloadURL(storageRef);
+
+        // Atualiza a URL na conta e no Firestore
+        await updateProfile(user, { photoURL: photoURL });
+        await updateDoc(doc(db, "users", user.uid), { photoURL: photoURL });
+
+        document.getElementById('profileAvatar').src = photoURL;
+        alert("Foto de perfil atualizada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao enviar foto:", error);
+        alert("Erro ao enviar a foto. Verifique as regras de segurança do Firebase Storage.");
+      }
+    });
+
+    // Salvar Atualização do Telefone e Cidade
+    document.getElementById('formProfile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const newPhone = document.getElementById('profPhone').value.trim();
+      const newCity = document.getElementById('profCity').value.trim();
+
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          phone: newPhone,
+          city: newCity
+        });
+
+        alert("Dados do perfil atualizados com sucesso!");
+        authModal.style.display = 'none';
+      } catch (error) {
+        console.error("Erro ao salvar perfil:", error);
+        alert("Erro ao salvar alterações: " + error.message);
+      }
+    });
+
   </script>
 </body>
 </html>
