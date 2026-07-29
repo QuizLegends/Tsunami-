@@ -156,10 +156,10 @@
       font-size: 0.9rem;
     }
 
-    /* Banner Principal (Hero Section) */
+    /* Banner Principal (Hero Section) - Ajustado padding inferior para dar respiro */
     .hero {
       background: var(--bg-gradient);
-      padding: 4rem 2rem;
+      padding: 4rem 2rem 5rem 2rem;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -178,22 +178,23 @@
 
     .hero p {
       font-size: 1.2rem;
-      margin-bottom: 2rem;
       opacity: 0.95;
     }
 
-    /* Barra de Pesquisa e Filtro */
+    /* Barra de Pesquisa - Ajustada a margem superior para subir a posição e descolar da transição */
     .search-bar {
       max-width: 900px;
-      margin: -2rem auto 2rem auto;
+      margin: -2.8rem auto 2.5rem auto;
       background: var(--dark-card);
-      padding: 1rem;
+      padding: 1.2rem;
       border-radius: 12px;
       border: 1px solid var(--border-color);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
       display: flex;
       gap: 0.8rem;
       flex-wrap: wrap;
+      position: relative;
+      z-index: 10;
     }
 
     .search-input, .category-select {
@@ -211,7 +212,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 1rem 2rem 2rem 2rem;
       width: 100%;
       flex: 1;
     }
@@ -378,7 +379,6 @@
 
     <!-- Feed de Trocas Dinâmico -->
     <div class="grid" id="offersGrid">
-      <!-- Exemplo estático (substituído pelo Firestore via JS) -->
       <div class="card">
         <div class="card-img" style="background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b;">
           [Foto do Item]
@@ -409,7 +409,6 @@
     import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // INSIRA AQUI AS SUAS CONFIGURAÇÕES DO FIREBASE CONSOLE
     const firebaseConfig = {
       apiKey: "SEU_API_KEY",
       authDomain: "SEU_PROJECT_ID.firebaseapp.com",
@@ -419,47 +418,40 @@
       appId: "SEU_APP_ID"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Elementos DOM
     const btnLogin = document.getElementById('btnLogin');
     const authElements = document.querySelectorAll('.auth-only');
     const offersGrid = document.getElementById('offersGrid');
 
-    // Gerenciador de Estado do Usuário
     onAuthStateChanged(auth, (user) => {
       if (user) {
         btnLogin.textContent = user.displayName || "Minha Conta";
         authElements.forEach(el => el.style.display = 'inline-flex');
-        // Carregar saldo de créditos do Firestore do usuário aqui
       } else {
         btnLogin.textContent = "Entrar / Criar Conta";
         authElements.forEach(el => el.style.display = 'none');
       }
     });
 
-    // Login Simples com Google
     btnLogin.addEventListener('click', () => {
       if (!auth.currentUser) {
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider).catch(error => console.error("Erro no Login:", error));
       } else {
-        // Redirecionar para o Painel do Perfil
         alert("Painel do Perfil em desenvolvimento!");
       }
     });
 
-    // Função Exemplo: Carregar Ofertas do Firestore
     async function loadOffers() {
       try {
         const q = query(collection(db, "offers"), limit(12));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-          offersGrid.innerHTML = ''; // Limpa o mock estático se houver dados
+          offersGrid.innerHTML = '';
           querySnapshot.forEach((doc) => {
             const item = doc.data();
             offersGrid.appendChild(createCardElement(item));
@@ -490,7 +482,6 @@
       return card;
     }
 
-    // Inicialização
     loadOffers();
   </script>
 </body>
