@@ -521,19 +521,19 @@
           <div class="profile-info-group">
             <div class="profile-info-item">
               <div class="profile-info-label">Nome de Usuário</div>
-              <div class="profile-info-value" id="viewName">-</div>
+              <div class="profile-info-value" id="viewName">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">E-mail</div>
-              <div class="profile-info-value" id="viewEmail">-</div>
+              <div class="profile-info-value" id="viewEmail">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">WhatsApp</div>
-              <div class="profile-info-value" id="viewPhone">-</div>
+              <div class="profile-info-value" id="viewPhone">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">Cidade / Endereço</div>
-              <div class="profile-info-value" id="viewCity">-</div>
+              <div class="profile-info-value" id="viewCity">Carregando...</div>
             </div>
           </div>
 
@@ -658,7 +658,7 @@
       if (tab === 'register') registerFormContainer.style.display = 'block';
       if (tab === 'profile') {
         profileFormContainer.style.display = 'block';
-        showProfileMode('view'); // Abre no modo visualização
+        showProfileMode('view');
       }
       
       authModal.style.display = 'flex';
@@ -698,6 +698,7 @@
               createdAt: new Date().toISOString()
             });
           }
+          await loadUserProfile(user.uid);
         }
       })
       .catch((error) => {
@@ -705,9 +706,9 @@
       });
 
     // Clique no botão principal do cabeçalho
-    btnAuthModal.addEventListener('click', () => {
+    btnAuthModal.addEventListener('click', async () => {
       if (auth.currentUser) {
-        loadUserProfile(auth.currentUser.uid);
+        await loadUserProfile(auth.currentUser.uid);
         showModalTab('profile');
       } else {
         showModalTab('login');
@@ -735,21 +736,7 @@
     // Monitor do Estado de Autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        let displayName = user.displayName;
-
-        if (!displayName) {
-          try {
-            const userSnap = await getDoc(doc(db, "users", user.uid));
-            if (userSnap.exists() && userSnap.data().name) {
-              displayName = userSnap.data().name;
-            }
-          } catch (e) {
-            console.error("Erro ao obter nome do usuário:", e);
-          }
-        }
-
-        const nameToDisplay = displayName || "Usuário";
-        btnAuthModal.textContent = `👤 ${nameToDisplay}`;
+        await loadUserProfile(user.uid);
         authElements.forEach(el => el.style.display = 'inline-flex');
         authModal.style.display = 'none';
       } else {
@@ -764,7 +751,8 @@
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
       try {
-        await signInWithEmailAndPassword(auth, email, pass);
+        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+        await loadUserProfile(userCred.user.uid);
       } catch (err) {
         alert("Erro no login: " + err.message);
       }
@@ -809,6 +797,8 @@
           createdAt: new Date().toISOString()
         });
 
+        await loadUserProfile(user.uid);
+
       } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
           alert("Este e-mail já está em uso. Redirecionando para login...");
@@ -830,31 +820,47 @@
       }
     });
 
-    // Carregar Informações do Perfil
+    // Carregar Informações do Perfil (Com fallback para Auth)
     async function loadUserProfile(userId) {
       try {
+        const currentUser = auth.currentUser;
+        let name = currentUser?.displayName || '';
+        let email = currentUser?.email || '';
+        let phone = '';
+        let city = '';
+
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
           const data = userSnap.data();
-          const name = data.name || auth.currentUser.displayName || 'Não informado';
-          const email = data.email || auth.currentUser.email || 'Não informado';
-          const phone = data.phone || 'Não informado';
-          const city = data.city || 'Não informado';
-
-          // Atualizar tela de visualização
-          document.getElementById('viewName').textContent = name;
-          document.getElementById('viewEmail').textContent = email;
-          document.getElementById('viewPhone').textContent = phone;
-          document.getElementById('viewCity').textContent = city;
-
-          // Preencher formulário de edição
-          document.getElementById('profName').value = name;
-          document.getElementById('profEmail').value = email;
-          document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
-          document.getElementById('profCity').value = city === 'Não informado' ? '' : city;
+          name = data.name || name;
+          email = data.email || email;
+          phone = data.phone || '';
+          city = data.city || '';
         }
+
+        // Garante valores padrão legíveis
+        name = name || 'Não informado';
+        email = email || 'Não informado';
+        phone = phone || 'Não informado';
+        city = city || 'Não informado';
+
+        // Atualizar Botão do Header
+        btnAuthModal.textContent = `👤 ${name}`;
+
+        // Atualizar Tela de Visualização
+        document.getElementById('viewName').textContent = name;
+        document.getElementById('viewEmail').textContent = email;
+        document.getElementById('viewPhone').textContent = phone;
+        document.getElementById('viewCity').textContent = city;
+
+        // Preencher Formulário de Edição
+        document.getElementById('profName').value = name === 'Não informado' ? '' : name;
+        document.getElementById('profEmail').value = email === 'Não informado' ? '' : email;
+        document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
+        document.getElementById('profCity').value = city === 'Não informado' ? '' : city;
+
       } catch (error) {
         console.error("Erro ao carregar o perfil:", error);
       }
@@ -888,7 +894,6 @@
         // 1. Atualizar Nome no Firebase Auth
         if (formattedName !== user.displayName) {
           await updateProfile(user, { displayName: formattedName });
-          btnAuthModal.textContent = `👤 ${formattedName}`;
         }
 
         // 2. Atualizar E-mail se alterado
