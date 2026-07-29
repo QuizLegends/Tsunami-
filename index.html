@@ -239,13 +239,6 @@
       border-color: var(--primary-blue);
     }
 
-    .card-img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      background-color: #1e293b;
-    }
-
     .card-body {
       padding: 1.2rem;
       display: flex;
@@ -263,7 +256,6 @@
       text-transform: uppercase;
     }
 
-    .badge-produto { background: rgba(0, 136, 255, 0.2); color: var(--primary-blue); }
     .badge-servico { background: rgba(255, 51, 85, 0.2); color: var(--primary-red); }
 
     .card-title {
@@ -453,9 +445,6 @@
 
     <div class="grid" id="offersGrid">
       <div class="card">
-        <div class="card-img" style="background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b;">
-          [Item para Troca]
-        </div>
         <div class="card-body">
           <span class="card-badge badge-servico">Serviço</span>
           <h3 class="card-title">Instalação Elétrica Residencial</h3>
@@ -521,19 +510,19 @@
           <div class="profile-info-group">
             <div class="profile-info-item">
               <div class="profile-info-label">Nome de Usuário</div>
-              <div class="profile-info-value" id="viewName">-</div>
+              <div class="profile-info-value" id="viewName">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">E-mail</div>
-              <div class="profile-info-value" id="viewEmail">-</div>
+              <div class="profile-info-value" id="viewEmail">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">WhatsApp</div>
-              <div class="profile-info-value" id="viewPhone">-</div>
+              <div class="profile-info-value" id="viewPhone">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">Cidade / Endereço</div>
-              <div class="profile-info-value" id="viewCity">-</div>
+              <div class="profile-info-value" id="viewCity">Carregando...</div>
             </div>
           </div>
 
@@ -542,7 +531,7 @@
           </div>
         </div>
 
-        <!-- FORMULÁRIO DE EDIÇÃO (OCULTO POR PADRÃO) -->
+        <!-- FORMULÁRIO DE EDIÇÃO -->
         <form id="formProfile" style="display: none;">
           <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome</label>
           <input type="text" id="profName" class="form-input" required />
@@ -565,7 +554,6 @@
           </button>
         </form>
 
-        <!-- ÚNICA OPÇÃO DE SAIR DA CONTA -->
         <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1.5rem; border-color: var(--primary-red); color: var(--primary-red);">
           Sair da Conta
         </button>
@@ -597,11 +585,9 @@
       getFirestore, 
       doc, 
       setDoc, 
-      getDoc, 
-      updateDoc 
+      getDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA-p54xblpgEqdv7eJ-HjN1FvCv12Vz-ZU",
       authDomain: "trocae-f94e1.firebaseapp.com",
@@ -612,12 +598,10 @@
       appId: "1:727780957751:web:0cc36e90d867031b8069b2"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Lista de palavras proibidas
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
       "pinto", "merda", "cacete", "arrombado", "cu", "desgraça", "viado", 
@@ -629,7 +613,6 @@
       return FORBIDDEN_WORDS.some(word => normalized.includes(word));
     }
 
-    // Elementos da Interface
     const authModal = document.getElementById('authModal');
     const btnAuthModal = document.getElementById('btnAuthModal');
     const btnCloseModal = document.getElementById('btnCloseModal');
@@ -648,7 +631,7 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
-    // Troca de Abas do Modal
+    // Mudar abas com verificação de dados imediata
     async function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
       registerFormContainer.style.display = 'none';
@@ -657,11 +640,11 @@
       if (tab === 'login') loginFormContainer.style.display = 'block';
       if (tab === 'register') registerFormContainer.style.display = 'block';
       if (tab === 'profile') {
+        profileFormContainer.style.display = 'block';
+        showProfileMode('view');
         if (auth.currentUser) {
           await loadUserProfile(auth.currentUser.uid);
         }
-        profileFormContainer.style.display = 'block';
-        showProfileMode('view');
       }
       
       authModal.style.display = 'flex';
@@ -677,11 +660,10 @@
       }
     }
 
-    // Eventos do perfil
     btnEnableEdit.addEventListener('click', () => showProfileMode('edit'));
     btnCancelEdit.addEventListener('click', () => showProfileMode('view'));
 
-    // Processa retorno do login do Google
+    // Trata login via redirecionamento do Google
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -701,13 +683,11 @@
               createdAt: new Date().toISOString()
             });
           }
+          await loadUserProfile(user.uid);
         }
       })
-      .catch((error) => {
-        console.error("Erro no login via Google:", error);
-      });
+      .catch((error) => console.error("Erro no login Google:", error));
 
-    // Clique no botão principal do cabeçalho
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
         showModalTab('profile');
@@ -718,10 +698,13 @@
 
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
-    // Botão de Logout
-    btnLogoutModal.addEventListener('click', () => {
-      signOut(auth);
+    btnLogoutModal.addEventListener('click', async () => {
+      await signOut(auth);
       authModal.style.display = 'none';
+      document.getElementById('viewName').textContent = 'Carregando...';
+      document.getElementById('viewEmail').textContent = 'Carregando...';
+      document.getElementById('viewPhone').textContent = 'Carregando...';
+      document.getElementById('viewCity').textContent = 'Carregando...';
     });
 
     linkToRegister.addEventListener('click', (e) => {
@@ -734,43 +717,34 @@
       showModalTab('login');
     });
 
-    // Monitor do Estado de Autenticação
+    // Monitor do Estado de Autenticação com carregamento garantido
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        let displayName = user.displayName;
-
-        try {
-          const userSnap = await getDoc(doc(db, "users", user.uid));
-          if (userSnap.exists() && userSnap.data().name) {
-            displayName = userSnap.data().name;
-          }
-        } catch (e) {
-          console.error("Erro ao obter nome do usuário:", e);
-        }
-
-        const nameToDisplay = displayName || "Usuário";
-        btnAuthModal.textContent = `👤 ${nameToDisplay}`;
         authElements.forEach(el => el.style.display = 'inline-flex');
         authModal.style.display = 'none';
+        
+        // Carrega dados diretamente da coleção do usuário
+        await loadUserProfile(user.uid);
       } else {
         btnAuthModal.textContent = "Entrar / Cadastrar";
         authElements.forEach(el => el.style.display = 'none');
       }
     });
 
-    // Login E-mail e Senha
+    // Submeter Login
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
       try {
-        await signInWithEmailAndPassword(auth, email, pass);
+        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+        await loadUserProfile(userCred.user.uid);
       } catch (err) {
         alert("Erro no login: " + err.message);
       }
     });
 
-    // Cadastro de Usuário
+    // Submeter Cadastro
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('regName').value.trim();
@@ -809,6 +783,8 @@
           createdAt: new Date().toISOString()
         });
 
+        await loadUserProfile(user.uid);
+
       } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
           alert("Este e-mail já está em uso. Redirecionando para login...");
@@ -820,7 +796,6 @@
       }
     });
 
-    // Login com Google
     document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
       try {
@@ -830,30 +805,32 @@
       }
     });
 
-    // Carregar Informações do Perfil
+    // Função de carregamento que garante que o Firestore e Auth estejam sincronizados
     async function loadUserProfile(userId) {
+      if (!userId) return;
+
+      const currentUser = auth.currentUser;
+
       try {
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
-        let data = {};
-        if (userSnap.exists()) {
-          data = userSnap.data();
-        }
+        let data = userSnap.exists() ? userSnap.data() : {};
 
-        const currentUser = auth.currentUser;
+        // Resgates de segurança caso algum campo no banco venha vazio
         const name = data.name || (currentUser ? currentUser.displayName : '') || 'Não informado';
         const email = data.email || (currentUser ? currentUser.email : '') || 'Não informado';
         const phone = data.phone || 'Não informado';
         const city = data.city || 'Não informado';
 
-        // Atualizar tela de visualização
+        // Atualização da Interface
+        btnAuthModal.textContent = `👤 ${name}`;
         document.getElementById('viewName').textContent = name;
         document.getElementById('viewEmail').textContent = email;
         document.getElementById('viewPhone').textContent = phone;
         document.getElementById('viewCity').textContent = city;
 
-        // Preencher formulário de edição
+        // Preenchimento dos inputs de Edição
         document.getElementById('profName').value = name === 'Não informado' ? '' : name;
         document.getElementById('profEmail').value = email === 'Não informado' ? '' : email;
         document.getElementById('profPhone').value = phone === 'Não informado' ? '' : phone;
@@ -861,6 +838,12 @@
 
       } catch (error) {
         console.error("Erro ao carregar o perfil:", error);
+        if (currentUser) {
+          const fallbackName = currentUser.displayName || 'Usuário';
+          btnAuthModal.textContent = `👤 ${fallbackName}`;
+          document.getElementById('viewName').textContent = fallbackName;
+          document.getElementById('viewEmail').textContent = currentUser.email || 'Não informado';
+        }
       }
     }
 
@@ -889,17 +872,14 @@
       const formattedName = `${nameParts[0]} ${nameParts[1]}`;
 
       try {
-        // 1. Atualizar Nome no Firebase Auth
         if (formattedName !== user.displayName) {
           await updateProfile(user, { displayName: formattedName });
-          btnAuthModal.textContent = `👤 ${formattedName}`;
         }
 
-        // 2. Atualizar E-mail se alterado
         if (newEmail !== user.email) {
           try {
             await verifyBeforeUpdateEmail(user, newEmail);
-            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir a alteração.`);
+            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir.`);
           } catch (emailErr) {
             if (emailErr.code === 'auth/requires-recent-login') {
               alert("Por motivos de segurança, faça login novamente antes de alterar o seu e-mail.");
@@ -911,8 +891,8 @@
           }
         }
 
-        // 3. Atualizar Firestore (uso do setDoc com merge: true)
         await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
           name: formattedName,
           email: newEmail,
           phone: newPhone,
