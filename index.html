@@ -1,123 +1,211 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TSUNAMI | Stress Test Panel</title>
-    <style>
-        body {
-            background-color: #000;
-            color: #00ffff;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
 
-        #panel {
-            border: 2px solid #ffd700;
-            padding: 20px;
-            box-shadow: 0 0 15px #00ffff;
-            background: rgba(0, 20, 20, 0.8);
-            width: 90%;
-            max-width: 400px;
-            transition: all 0.5s ease; /* Suaviza a mudança de cores */
-        }
+    <title>Trocaê | Troque sem precisar de dinheiro</title>
 
-        h1 {
-            color: #ffd700;
-            text-align: center;
-            text-shadow: 2px 2px #ff0000;
-            letter-spacing: 5px;
-            margin-bottom: 20px;
-        }
+    <meta name="description"
+        content="Troque produtos e serviços de forma simples, rápida e segura. Bem-vindo ao Trocaê.">
 
-        .status-box {
-            border: 1px solid #00ffff;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 0.8em;
-            background: #000;
-            line-height: 1.6;
-        }
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/responsive.css">
 
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding-top: 5px;
-            border-top: 1px dashed #00ffff;
-            color: #ffd700;
-        }
-
-        input {
-            width: 100%;
-            background: #111;
-            border: 1px solid #00ffff;
-            color: #ffd700;
-            padding: 10px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background: #00ffff;
-            color: #000;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background: #ffd700;
-            box-shadow: 0 0 20px #ffd700;
-        }
-
-        #log {
-            height: 100px;
-            overflow-y: auto;
-            color: #00ff00;
-            font-size: 0.7em;
-            margin-top: 10px;
-        }
-
-        .warning { color: #ff0000; font-weight: bold; }
-        .latency-text { color: #ffd700; font-weight: bold; }
-    </style>
+    <link rel="icon" href="assets/logo.svg">
 </head>
+
 <body>
 
-<div id="panel">
-    <h1>TSUNAMI</h1>
-    <div class="status-box">
-        STATUS: <span id="engine-status">IDLE</span><br>
-        REQUISITOS/SEG: <span id="rps">0</span><br>
-        LATÊNCIA: <span id="latency" class="latency-text">0ms</span>
-        
-        <div class="stats-row">
-            <span>TOTAL: <span id="total-hits">0</span></span>
-            <span>TEMPO: <span id="timer">00:00</span></span>
+    <!-- HEADER -->
+
+    <header>
+
+        <div class="logo">
+
+            <h1>↺ Trocaê ↻</h1>
+
         </div>
-    </div>
 
-    <input type="text" id="target" placeholder="URL DO ALVO">
-    
-    <button onclick="toggleTsunami()" id="btn-main">Iniciar Onda</button>
+        <nav>
 
-    <div id="log">
-        [SISTEMA]: Aguardando coordenadas...
-    </div>
-</div>
+            <a href="#">Início</a>
+            <a href="#">Categorias</a>
+            <a href="#">Como funciona</a>
+            <a href="#">Entrar</a>
 
-<script src="engine.js"></script>
+            <button class="btn-cadastro">
+                Criar Conta
+            </button>
+
+        </nav>
+
+    </header>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-text">
+
+            <h2>
+                Troque sem precisar de dinheiro.
+            </h2>
+
+            <p>
+
+                Encontre pessoas para trocar produtos e serviços
+                com segurança e praticidade.
+
+            </p>
+
+            <div class="hero-buttons">
+
+                <button class="btn-primary">
+                    Começar Agora
+                </button>
+
+                <button class="btn-secondary">
+                    Explorar Trocas
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="hero-image">
+
+            📦 🔄 🛠️
+
+        </div>
+
+    </section>
+
+    <!-- CATEGORIAS -->
+
+    <section class="categorias">
+
+        <h2>Categorias</h2>
+
+        <div class="grid">
+
+            <div class="card">📱 Tecnologia</div>
+            <div class="card">🚗 Veículos</div>
+            <div class="card">🏠 Casa</div>
+            <div class="card">💼 Serviços</div>
+            <div class="card">🎮 Games</div>
+            <div class="card">📚 Livros</div>
+            <div class="card">🎸 Música</div>
+            <div class="card">👕 Moda</div>
+
+        </div>
+
+    </section>
+
+    <!-- COMO FUNCIONA -->
+
+    <section class="funciona">
+
+        <h2>Como funciona?</h2>
+
+        <div class="passos">
+
+            <div class="passo">
+
+                <h3>1️⃣ Cadastre-se</h3>
+
+                <p>
+                    Crie sua conta gratuitamente.
+                </p>
+
+            </div>
+
+            <div class="passo">
+
+                <h3>2️⃣ Publique</h3>
+
+                <p>
+                    Anuncie produtos ou serviços.
+                </p>
+
+            </div>
+
+            <div class="passo">
+
+                <h3>3️⃣ Receba propostas</h3>
+
+                <p>
+                    Converse pelo chat e combine a troca.
+                </p>
+
+            </div>
+
+            <div class="passo">
+
+                <h3>4️⃣ Faça a troca</h3>
+
+                <p>
+                    Avalie a experiência e ganhe reputação.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- DESTAQUES -->
+
+    <section class="destaques">
+
+        <h2>Por que usar o Trocaê?</h2>
+
+        <div class="grid">
+
+            <div class="card">
+                🔒 Segurança nas negociações
+            </div>
+
+            <div class="card">
+                ⭐ Sistema de avaliações
+            </div>
+
+            <div class="card">
+                💬 Chat em tempo real
+            </div>
+
+            <div class="card">
+                📍 Trocas perto de você
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- RODAPÉ -->
+
+    <footer>
+
+        <h2>Trocaê</h2>
+
+        <p>
+
+            Troque produtos e serviços sem precisar de dinheiro.
+
+        </p>
+
+        <small>
+
+            © 2026 Trocaê - Todos os direitos reservados.
+
+        </small>
+
+    </footer>
+
+    <script src="js/app.js"></script>
+
 </body>
+
 </html>
