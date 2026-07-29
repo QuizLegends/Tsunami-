@@ -347,31 +347,6 @@
       font-weight: bold;
     }
 
-    /* Estilos do Perfil de Usuário */
-    .profile-avatar-container {
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .profile-avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--primary-blue);
-      background-color: #1e293b;
-      margin-bottom: 0.5rem;
-    }
-
-    .avatar-upload-btn {
-      display: inline-block;
-      color: var(--primary-blue);
-      font-size: 0.85rem;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
     footer {
       background: var(--dark-card);
       border-top: 1px solid var(--border-color);
@@ -398,7 +373,6 @@
 
       <div class="nav-actions">
         <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
-        <button id="btnProfile" class="btn btn-outline auth-only">👤 Meu Perfil</button>
         <button id="btnAuthModal" class="btn btn-outline">Entrar / Cadastrar</button>
       </div>
     </div>
@@ -442,7 +416,7 @@
     <div class="grid" id="offersGrid">
       <div class="card">
         <div class="card-img" style="background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b;">
-          [Foto do Item]
+          [Item para Troca]
         </div>
         <div class="card-body">
           <span class="card-badge badge-servico">Serviço</span>
@@ -450,7 +424,7 @@
           <p class="card-wants">🔄 <strong>Procura:</strong> Aulas de Inglês ou Manutenção de PC</p>
           <div class="card-footer">
             <div class="user-info">
-              <span>João Silva (★ 4.9)</span>
+              <span>👤 João Silva (★ 4.9)</span>
             </div>
             <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Propor Troca</button>
           </div>
@@ -500,19 +474,12 @@
         </p>
       </div>
 
-      <!-- ABA MEU PERFIL (NOVA SEÇÃO) -->
+      <!-- ABA MEU PERFIL -->
       <div id="profileFormContainer" style="display: none;">
         <h2 class="modal-title">Meu Perfil</h2>
         
-        <div class="profile-avatar-container">
-          <img id="profileAvatar" class="profile-avatar" src="https://via.placeholder.com/110/121824/0088ff?text=Foto" alt="Foto de Perfil" />
-          <br />
-          <label for="filePhoto" class="avatar-upload-btn">Alterar Foto de Perfil</label>
-          <input type="file" id="filePhoto" accept="image/*" style="display: none;" />
-        </div>
-
         <form id="formProfile">
-          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome</label>
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome (Público)</label>
           <input type="text" id="profName" class="form-input" disabled />
 
           <label style="font-size: 0.85rem; color: var(--text-muted);">E-mail</label>
@@ -529,6 +496,7 @@
           </button>
         </form>
 
+        <!-- ÚNICA OPÇÃO DE SAIR DA CONTA -->
         <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1rem; border-color: var(--primary-red); color: var(--primary-red);">
           Sair da Conta
         </button>
@@ -562,12 +530,6 @@
       getDoc, 
       updateDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { 
-      getStorage, 
-      ref, 
-      uploadBytes, 
-      getDownloadURL 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
     // Configuração do Firebase
     const firebaseConfig = {
@@ -580,13 +542,12 @@
       appId: "1:727780957751:web:0cc36e90d867031b8069b2"
     };
 
-    // Inicializar Firebase e Serviços
+    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
-    // Lista de palavras proibidas (filtro de profanidades/palavrões)
+    // Lista de palavras proibidas
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
       "pinto", "merda", "cacete", "arrombado", "cu", "desgraça", "viado", 
@@ -601,7 +562,6 @@
     // Elementos da Interface
     const authModal = document.getElementById('authModal');
     const btnAuthModal = document.getElementById('btnAuthModal');
-    const btnProfile = document.getElementById('btnProfile');
     const btnCloseModal = document.getElementById('btnCloseModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
     
@@ -613,7 +573,7 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
-    // Função de Troca de Abas da Modal
+    // Troca de Abas do Modal
     function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
       registerFormContainer.style.display = 'none';
@@ -626,7 +586,7 @@
       authModal.style.display = 'flex';
     }
 
-    // Processa o retorno do login do Google via Redirecionamento
+    // Processa retorno do login do Google
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -639,7 +599,6 @@
               uid: user.uid,
               name: user.displayName || "Usuário Google",
               email: user.email,
-              photoURL: user.photoURL || "",
               city: "Não informada",
               phone: "",
               rating: 5.0,
@@ -650,29 +609,22 @@
         }
       })
       .catch((error) => {
-        console.error("Erro no retorno do login Google:", error);
+        console.error("Erro no login via Google:", error);
       });
 
-    // Eventos da Modal e Navegação
+    // Clique no botão principal do cabeçalho
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
-        if (confirm("Deseja sair da sua conta?")) {
-          signOut(auth);
-        }
+        loadUserProfile(auth.currentUser.uid);
+        showModalTab('profile'); // Abre o perfil em vez de deslogar diretamente
       } else {
         showModalTab('login');
       }
     });
 
-    btnProfile.addEventListener('click', () => {
-      if (auth.currentUser) {
-        loadUserProfile(auth.currentUser.uid);
-        showModalTab('profile');
-      }
-    });
-
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
+    // Único botão de Logout (na tela de perfil)
     btnLogoutModal.addEventListener('click', () => {
       signOut(auth);
       authModal.style.display = 'none';
@@ -693,7 +645,6 @@
       if (user) {
         let displayName = user.displayName;
 
-        // Se o nome não constar no Firebase Auth, busca no Firestore
         if (!displayName) {
           try {
             const userSnap = await getDoc(doc(db, "users", user.uid));
@@ -701,12 +652,12 @@
               displayName = userSnap.data().name;
             }
           } catch (e) {
-            console.error("Erro ao carregar nome:", e);
+            console.error("Erro ao obter nome do usuário:", e);
           }
         }
 
-        const nameToDisplay = displayName || "Minha Conta";
-        btnAuthModal.textContent = `Sair (${nameToDisplay})`;
+        const nameToDisplay = displayName || "Usuário";
+        btnAuthModal.textContent = `👤 ${nameToDisplay}`;
         authElements.forEach(el => el.style.display = 'inline-flex');
         authModal.style.display = 'none';
       } else {
@@ -715,7 +666,7 @@
       }
     });
 
-    // Ação: Login com E-mail e Senha
+    // Login E-mail e Senha
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
@@ -727,7 +678,7 @@
       }
     });
 
-    // Ação: Cadastro de Novo Usuário com Validação de Nome + Firestore
+    // Cadastro de Usuário
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('regName').value.trim();
@@ -736,37 +687,31 @@
       const city = document.getElementById('regCity').value.trim();
       const phone = document.getElementById('regPhone').value.trim();
 
-      // Validação de Nome e Sobrenome
       const nameParts = rawName.split(/\s+/);
       if (nameParts.length < 2) {
         alert("Por favor, informe pelo menos o seu Nome e Sobrenome.");
         return;
       }
 
-      // Validação de palavras proibidas
       if (containsForbiddenWords(rawName)) {
         alert("O nome digitado contém palavras ou termos não permitidos. Escolha um nome adequado.");
         return;
       }
 
-      // Formata para conter apenas Nome e Sobrenome (duas primeiras palavras)
       const formattedName = `${nameParts[0]} ${nameParts[1]}`;
 
       try {
         const userCred = await createUserWithEmailAndPassword(auth, email, pass);
         const user = userCred.user;
 
-        // Atualiza o perfil no Firebase Auth com o Nome e Sobrenome
         await updateProfile(user, { displayName: formattedName });
 
-        // Salva os dados no Firestore
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: formattedName,
           email: email,
           city: city,
           phone: phone,
-          photoURL: "",
           rating: 5.0,
           tradesCount: 0,
           createdAt: new Date().toISOString()
@@ -783,7 +728,7 @@
       }
     });
 
-    // Ação: Login via Google com Redirecionamento
+    // Login com Google
     document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
       try {
@@ -793,8 +738,7 @@
       }
     });
 
-    // --- CARREGAR E EDITAR DADOS DO PERFIL ---
-
+    // Carregar Informações do Perfil
     async function loadUserProfile(userId) {
       try {
         const userRef = doc(db, "users", userId);
@@ -806,46 +750,13 @@
           document.getElementById('profEmail').value = data.email || auth.currentUser.email || '';
           document.getElementById('profPhone').value = data.phone || '';
           document.getElementById('profCity').value = data.city || '';
-
-          if (data.photoURL) {
-            document.getElementById('profileAvatar').src = data.photoURL;
-          } else if (auth.currentUser.photoURL) {
-            document.getElementById('profileAvatar').src = auth.currentUser.photoURL;
-          } else {
-            document.getElementById('profileAvatar').src = "https://via.placeholder.com/110/121824/0088ff?text=Foto";
-          }
         }
       } catch (error) {
-        console.error("Erro ao carregar dados do perfil:", error);
+        console.error("Erro ao carregar o perfil:", error);
       }
     }
 
-    // Upload da Foto de Perfil no Firebase Storage
-    document.getElementById('filePhoto').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      const user = auth.currentUser;
-
-      if (!file || !user) return;
-
-      try {
-        alert("Enviando imagem...");
-        const storageRef = ref(storage, `profile_photos/${user.uid}`);
-        await uploadBytes(storageRef, file);
-        const photoURL = await getDownloadURL(storageRef);
-
-        // Atualiza a URL na conta e no Firestore
-        await updateProfile(user, { photoURL: photoURL });
-        await updateDoc(doc(db, "users", user.uid), { photoURL: photoURL });
-
-        document.getElementById('profileAvatar').src = photoURL;
-        alert("Foto de perfil atualizada com sucesso!");
-      } catch (error) {
-        console.error("Erro ao enviar foto:", error);
-        alert("Erro ao enviar a foto. Verifique as regras de segurança do Firebase Storage.");
-      }
-    });
-
-    // Salvar Atualização do Telefone e Cidade
+    // Salvar Atualizações do Perfil (Telefone e Cidade)
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -860,11 +771,11 @@
           city: newCity
         });
 
-        alert("Dados do perfil atualizados com sucesso!");
+        alert("Perfil atualizado com sucesso!");
         authModal.style.display = 'none';
       } catch (error) {
-        console.error("Erro ao salvar perfil:", error);
-        alert("Erro ao salvar alterações: " + error.message);
+        console.error("Erro ao salvar alterações do perfil:", error);
+        alert("Erro ao salvar perfil: " + error.message);
       }
     });
 
