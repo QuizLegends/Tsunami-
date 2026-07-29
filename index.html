@@ -1,211 +1,497 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trocaê | Plataforma de Escambo Inteligente</title>
+  
+  <!-- Estilos Gerais da Aplicação -->
+  <style>
+    :root {
+      --primary-blue: #0088ff;
+      --primary-red: #ff3355;
+      --bg-gradient: linear-gradient(135deg, #0088ff 0%, #7052ff 50%, #ff3355 100%);
+      --dark-card: #121824;
+      --dark-bg: #0b0f17;
+      --text-main: #f0f4f8;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
 
-    <title>Trocaê | Troque sem precisar de dinheiro</title>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
 
-    <meta name="description"
-        content="Troque produtos e serviços de forma simples, rápida e segura. Bem-vindo ao Trocaê.">
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/home.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    /* Header e Marca (Trocaê) */
+    header {
+      background: rgba(11, 15, 23, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+    }
 
-    <link rel="icon" href="assets/logo.svg">
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-container {
+      position: relative;
+      display: inline-block;
+      padding: 10px 15px;
+      text-decoration: none;
+    }
+
+    .logo-text {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    /* Setas curvadas sobre/sob o nome */
+    .arrow-top {
+      position: absolute;
+      top: -2px;
+      left: 10px;
+      right: 10px;
+      height: 12px;
+      border-top: 3px solid var(--primary-blue);
+      border-right: 3px solid var(--primary-blue);
+      border-top-right-radius: 12px;
+      transform: skewX(-15deg);
+    }
+    .arrow-top::after {
+      content: '';
+      position: absolute;
+      right: -2px;
+      top: -6px;
+      border-left: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-top: 6px solid var(--primary-blue);
+      transform: rotate(-45deg);
+    }
+
+    .arrow-bottom {
+      position: absolute;
+      bottom: -2px;
+      left: 10px;
+      right: 10px;
+      height: 12px;
+      border-bottom: 3px solid var(--primary-red);
+      border-left: 3px solid var(--primary-red);
+      border-bottom-left-radius: 12px;
+      transform: skewX(-15deg);
+    }
+    .arrow-bottom::after {
+      content: '';
+      position: absolute;
+      left: -2px;
+      bottom: -6px;
+      border-right: 6px solid transparent;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid var(--primary-red);
+      transform: rotate(-45deg);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-gradient {
+      background: var(--bg-gradient);
+      color: #fff;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .user-credits-badge {
+      background: rgba(0, 136, 255, 0.15);
+      border: 1px solid var(--primary-blue);
+      color: #38ef7d;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    /* Banner Principal (Hero Section) */
+    .hero {
+      background: var(--bg-gradient);
+      padding: 4rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      opacity: 0.95;
+    }
+
+    /* Barra de Pesquisa e Filtro */
+    .search-bar {
+      max-width: 900px;
+      margin: -2rem auto 2rem auto;
+      background: var(--dark-card);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input, .category-select {
+      flex: 1;
+      min-width: 180px;
+      padding: 0.8rem;
+      background: var(--dark-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    /* Grid de Anúncios */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--dark-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary-blue);
+    }
+
+    .card-img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background-color: #1e293b;
+    }
+
+    .card-body {
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-badge {
+      align-self: flex-start;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .badge-produto { background: rgba(0, 136, 255, 0.2); color: var(--primary-blue); }
+    .badge-servico { background: rgba(255, 51, 85, 0.2); color: var(--primary-red); }
+
+    .card-title {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-wants {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #334155;
+    }
+
+    footer {
+      background: var(--dark-card);
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: auto;
+    }
+
+    /* Modal / Auth State */
+    .auth-only { display: none; }
+  </style>
 </head>
-
 <body>
 
-    <!-- HEADER -->
+  <!-- Header Nav -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo-container">
+        <div class="arrow-top"></div>
+        <span class="logo-text">Trocaê</span>
+        <div class="arrow-bottom"></div>
+      </a>
 
-    <header>
-
-        <div class="logo">
-
-            <h1>↺ Trocaê ↻</h1>
-
+      <div class="nav-actions">
+        <div id="userBadge" class="user-credits-badge auth-only">
+          🪙 <span id="creditBalance">0</span> Créditos
         </div>
+        <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
+        <button id="btnLogin" class="btn btn-outline">Entrar / Criar Conta</button>
+      </div>
+    </div>
+  </header>
 
-        <nav>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Troque o que tem pelo que precisa</h1>
+      <p>Serviços, produtos ou trocas mistas. Sem dinheiro envolvido — use escambo direto ou nossa moeda virtual!</p>
+    </div>
+  </section>
 
-            <a href="#">Início</a>
-            <a href="#">Categorias</a>
-            <a href="#">Como funciona</a>
-            <a href="#">Entrar</a>
+  <!-- Filtros e Busca -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" class="search-input" placeholder="O que você está procurando ou oferecendo?" />
+    <select id="categoryFilter" class="category-select">
+      <option value="">Todas as Categorias</option>
+      <option value="tecnologia">Tecnologia</option>
+      <option value="construcao">Construção & Reformas</option>
+      <option value="aulas">Aulas & Treinamentos</option>
+      <option value="beleza">Beleza & Estética</option>
+      <option value="automoveis">Automóveis</option>
+      <option value="roupas">Roupas & Acessórios</option>
+      <option value="esportes">Esportes & Lazer</option>
+    </select>
+    <select id="typeFilter" class="category-select">
+      <option value="">Todos os Tipos</option>
+      <option value="produto">Produtos</option>
+      <option value="servico">Serviços</option>
+    </select>
+    <button id="btnSearch" class="btn btn-gradient">Buscar</button>
+  </div>
 
-            <button class="btn-cadastro">
-                Criar Conta
-            </button>
+  <!-- Container Principal de Conteúdo -->
+  <main class="container">
+    <div class="section-title">
+      <h2>Oportunidades em Destaque</h2>
+    </div>
 
-        </nav>
-
-    </header>
-
-    <!-- HERO -->
-
-    <section class="hero">
-
-        <div class="hero-text">
-
-            <h2>
-                Troque sem precisar de dinheiro.
-            </h2>
-
-            <p>
-
-                Encontre pessoas para trocar produtos e serviços
-                com segurança e praticidade.
-
-            </p>
-
-            <div class="hero-buttons">
-
-                <button class="btn-primary">
-                    Começar Agora
-                </button>
-
-                <button class="btn-secondary">
-                    Explorar Trocas
-                </button>
-
-            </div>
-
+    <!-- Feed de Trocas Dinâmico -->
+    <div class="grid" id="offersGrid">
+      <!-- Exemplo estático (substituído pelo Firestore via JS) -->
+      <div class="card">
+        <div class="card-img" style="background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b;">
+          [Foto do Item]
         </div>
-
-        <div class="hero-image">
-
-            📦 🔄 🛠️
-
+        <div class="card-body">
+          <span class="card-badge badge-servico">Serviço</span>
+          <h3 class="card-title">Instalação Elétrica Residencial</h3>
+          <p class="card-wants">🔄 <strong>Procura:</strong> Aulas de Inglês ou 150 Créditos</p>
+          <div class="card-footer">
+            <div class="user-info">
+              <div class="user-avatar"></div>
+              <span>João Silva (★ 4.9)</span>
+            </div>
+            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Propor</button>
+          </div>
         </div>
+      </div>
+    </div>
+  </main>
 
-    </section>
+  <footer>
+    <p>&copy; 2026 Trocaê — Conectando necessidades através do escambo inteligente.</p>
+  </footer>
 
-    <!-- CATEGORIAS -->
+  <!-- Firebase v10 SDK Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <section class="categorias">
+    // INSIRA AQUI AS SUAS CONFIGURAÇÕES DO FIREBASE CONSOLE
+    const firebaseConfig = {
+      apiKey: "SEU_API_KEY",
+      authDomain: "SEU_PROJECT_ID.firebaseapp.com",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_PROJECT_ID.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
 
-        <h2>Categorias</h2>
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        <div class="grid">
+    // Elementos DOM
+    const btnLogin = document.getElementById('btnLogin');
+    const authElements = document.querySelectorAll('.auth-only');
+    const offersGrid = document.getElementById('offersGrid');
 
-            <div class="card">📱 Tecnologia</div>
-            <div class="card">🚗 Veículos</div>
-            <div class="card">🏠 Casa</div>
-            <div class="card">💼 Serviços</div>
-            <div class="card">🎮 Games</div>
-            <div class="card">📚 Livros</div>
-            <div class="card">🎸 Música</div>
-            <div class="card">👕 Moda</div>
+    // Gerenciador de Estado do Usuário
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        btnLogin.textContent = user.displayName || "Minha Conta";
+        authElements.forEach(el => el.style.display = 'inline-flex');
+        // Carregar saldo de créditos do Firestore do usuário aqui
+      } else {
+        btnLogin.textContent = "Entrar / Criar Conta";
+        authElements.forEach(el => el.style.display = 'none');
+      }
+    });
 
+    // Login Simples com Google
+    btnLogin.addEventListener('click', () => {
+      if (!auth.currentUser) {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch(error => console.error("Erro no Login:", error));
+      } else {
+        // Redirecionar para o Painel do Perfil
+        alert("Painel do Perfil em desenvolvimento!");
+      }
+    });
+
+    // Função Exemplo: Carregar Ofertas do Firestore
+    async function loadOffers() {
+      try {
+        const q = query(collection(db, "offers"), limit(12));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          offersGrid.innerHTML = ''; // Limpa o mock estático se houver dados
+          querySnapshot.forEach((doc) => {
+            const item = doc.data();
+            offersGrid.appendChild(createCardElement(item));
+          });
+        }
+      } catch (e) {
+        console.log("Firestore ainda não configurado ou sem dados. Exibindo estado padrão.");
+      }
+    }
+
+    function createCardElement(data) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img class="card-img" src="${data.imageUrl || 'https://via.placeholder.com/300x180?text=Trocaê'}" alt="${data.title}" />
+        <div class="card-body">
+          <span class="card-badge ${data.type === 'servico' ? 'badge-servico' : 'badge-produto'}">${data.type}</span>
+          <h3 class="card-title">${data.title}</h3>
+          <p class="card-wants">🔄 <strong>Procura:</strong> ${data.wants}</p>
+          <div class="card-footer">
+            <div class="user-info">
+              <span>${data.userName || 'Usuário'}</span>
+            </div>
+            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Propor</button>
+          </div>
         </div>
+      `;
+      return card;
+    }
 
-    </section>
-
-    <!-- COMO FUNCIONA -->
-
-    <section class="funciona">
-
-        <h2>Como funciona?</h2>
-
-        <div class="passos">
-
-            <div class="passo">
-
-                <h3>1️⃣ Cadastre-se</h3>
-
-                <p>
-                    Crie sua conta gratuitamente.
-                </p>
-
-            </div>
-
-            <div class="passo">
-
-                <h3>2️⃣ Publique</h3>
-
-                <p>
-                    Anuncie produtos ou serviços.
-                </p>
-
-            </div>
-
-            <div class="passo">
-
-                <h3>3️⃣ Receba propostas</h3>
-
-                <p>
-                    Converse pelo chat e combine a troca.
-                </p>
-
-            </div>
-
-            <div class="passo">
-
-                <h3>4️⃣ Faça a troca</h3>
-
-                <p>
-                    Avalie a experiência e ganhe reputação.
-                </p>
-
-            </div>
-
-        </div>
-
-    </section>
-
-    <!-- DESTAQUES -->
-
-    <section class="destaques">
-
-        <h2>Por que usar o Trocaê?</h2>
-
-        <div class="grid">
-
-            <div class="card">
-                🔒 Segurança nas negociações
-            </div>
-
-            <div class="card">
-                ⭐ Sistema de avaliações
-            </div>
-
-            <div class="card">
-                💬 Chat em tempo real
-            </div>
-
-            <div class="card">
-                📍 Trocas perto de você
-            </div>
-
-        </div>
-
-    </section>
-
-    <!-- RODAPÉ -->
-
-    <footer>
-
-        <h2>Trocaê</h2>
-
-        <p>
-
-            Troque produtos e serviços sem precisar de dinheiro.
-
-        </p>
-
-        <small>
-
-            © 2026 Trocaê - Todos os direitos reservados.
-
-        </small>
-
-    </footer>
-
-    <script src="js/app.js"></script>
-
+    // Inicialização
+    loadOffers();
+  </script>
 </body>
-
 </html>
