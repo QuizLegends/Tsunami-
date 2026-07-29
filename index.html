@@ -667,4 +667,14 @@
     });
 
     // Ação: Login via Google com Redirecionamento
-    document.getElementById('btnGoog
+    document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (err) {
+        alert("Erro ao iniciar login com Google: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
