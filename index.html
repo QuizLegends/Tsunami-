@@ -201,11 +201,6 @@
       margin-bottom: 1rem;
     }
 
-    .form-input:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
     /* Grid de Anúncios */
     .container {
       max-width: 1200px;
@@ -480,10 +475,10 @@
         
         <form id="formProfile">
           <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome (Público)</label>
-          <input type="text" id="profName" class="form-input" disabled />
+          <input type="text" id="profName" class="form-input" placeholder="Seu Nome e Sobrenome" required />
 
           <label style="font-size: 0.85rem; color: var(--text-muted);">E-mail</label>
-          <input type="email" id="profEmail" class="form-input" disabled />
+          <input type="email" id="profEmail" class="form-input" placeholder="Seu E-mail" required />
 
           <label style="font-size: 0.85rem; color: var(--text-muted);">WhatsApp / Telefone</label>
           <input type="tel" id="profPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
@@ -520,6 +515,7 @@
       signInWithRedirect,
       getRedirectResult,
       updateProfile,
+      verifyBeforeUpdateEmail,
       GoogleAuthProvider,
       signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -616,7 +612,7 @@
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
         loadUserProfile(auth.currentUser.uid);
-        showModalTab('profile'); // Abre o perfil em vez de deslogar diretamente
+        showModalTab('profile');
       } else {
         showModalTab('login');
       }
@@ -756,17 +752,58 @@
       }
     }
 
-    // Salvar Atualizações do Perfil (Telefone e Cidade)
+    // Salvar Atualizações do Perfil (Nome, E-mail, Telefone e Cidade)
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
       if (!user) return;
 
+      const newNameRaw = document.getElementById('profName').value.trim();
+      const newEmail = document.getElementById('profEmail').value.trim();
       const newPhone = document.getElementById('profPhone').value.trim();
       const newCity = document.getElementById('profCity').value.trim();
 
+      // Validação do Nome
+      const nameParts = newNameRaw.split(/\s+/);
+      if (nameParts.length < 2) {
+        alert("Por favor, informe pelo menos o seu Nome e Sobrenome.");
+        return;
+      }
+
+      if (containsForbiddenWords(newNameRaw)) {
+        alert("O nome digitado contém palavras não permitidas.");
+        return;
+      }
+
+      const formattedName = `${nameParts[0]} ${nameParts[1]}`;
+
       try {
+        // 1. Atualizar Nome no Firebase Auth
+        if (formattedName !== user.displayName) {
+          await updateProfile(user, { displayName: formattedName });
+          btnAuthModal.textContent = `👤 ${formattedName}`;
+        }
+
+        // 2. Atualizar E-mail se tiver mudado
+        if (newEmail !== user.email) {
+          try {
+            await verifyBeforeUpdateEmail(user, newEmail);
+            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir a alteração.`);
+          } catch (emailErr) {
+            if (emailErr.code === 'auth/requires-recent-login') {
+              alert("Por motivos de segurança, faça login novamente antes de alterar o seu e-mail.");
+              signOut(auth);
+              return;
+            } else {
+              throw emailErr;
+            }
+          }
+        }
+
+        // 3. Atualizar no Firestore
         await updateDoc(doc(db, "users", user.uid), {
+          name: formattedName,
+          email: newEmail,
           phone: newPhone,
           city: newCity
         });
@@ -774,7 +811,7 @@
         alert("Perfil atualizado com sucesso!");
         authModal.style.display = 'none';
       } catch (error) {
-        console.error("Erro ao salvar alterações do perfil:", error);
+        console.error("Erro ao salvar perfil:", error);
         alert("Erro ao salvar perfil: " + error.message);
       }
     });
