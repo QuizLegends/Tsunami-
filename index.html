@@ -201,6 +201,10 @@
       margin-bottom: 1rem;
     }
 
+    .form-input:focus {
+      border-color: var(--primary-blue);
+    }
+
     /* Grid de Anúncios */
     .container {
       max-width: 1200px;
@@ -366,15 +370,21 @@
     }
 
     .btn-edit-trigger {
+      width: 100%;
+      padding: 0.8rem;
+      background: rgba(0, 136, 255, 0.15);
       color: var(--primary-blue);
-      background: transparent;
-      border: none;
-      font-size: 0.85rem;
+      border: 1px solid var(--primary-blue);
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      text-decoration: underline;
-      display: inline-block;
       margin-bottom: 1.2rem;
+      transition: background 0.2s;
+    }
+
+    .btn-edit-trigger:hover {
+      background: rgba(0, 136, 255, 0.25);
     }
 
     footer {
@@ -526,26 +536,24 @@
             </div>
           </div>
 
-          <div style="text-align: center;">
-            <button id="btnEnableEdit" class="btn-edit-trigger">✏️ Editar Perfil</button>
-          </div>
+          <button id="btnEnableEdit" type="button" class="btn-edit-trigger">✏️ Editar Perfil</button>
         </div>
 
-        <!-- FORMULÁRIO DE EDIÇÃO -->
+        <!-- FORMULÁRIO DE EDIÇÃO (Liberado para Edição) -->
         <form id="formProfile" style="display: none;">
-          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome e Sobrenome</label>
+          <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Nome e Sobrenome</label>
           <input type="text" id="profName" class="form-input" required />
 
-          <label style="font-size: 0.85rem; color: var(--text-muted);">E-mail</label>
+          <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">E-mail</label>
           <input type="email" id="profEmail" class="form-input" required />
 
-          <label style="font-size: 0.85rem; color: var(--text-muted);">WhatsApp / Telefone</label>
-          <input type="tel" id="profPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
+          <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">WhatsApp / Telefone</label>
+          <input type="tel" id="profPhone" class="form-input" placeholder="Ex: (81) 98888-8888" required />
 
-          <label style="font-size: 0.85rem; color: var(--text-muted);">Cidade / Endereço</label>
+          <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Cidade / Endereço</label>
           <input type="text" id="profCity" class="form-input" placeholder="Ex: Jaboatão dos Guararapes" required />
 
-          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+          <button type="submit" id="btnSaveProfile" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
             Salvar Alterações
           </button>
           
@@ -659,8 +667,15 @@
       }
     }
 
-    btnEnableEdit.addEventListener('click', () => showProfileMode('edit'));
-    btnCancelEdit.addEventListener('click', () => showProfileMode('view'));
+    btnEnableEdit.addEventListener('click', (e) => {
+      e.preventDefault();
+      showProfileMode('edit');
+    });
+
+    btnCancelEdit.addEventListener('click', (e) => {
+      e.preventDefault();
+      showProfileMode('view');
+    });
 
     // Google Sign-In redirect result
     getRedirectResult(auth)
@@ -802,7 +817,7 @@
       }
     });
 
-    // Função de carregamento que garante o tratamento de campos ausentes
+    // Função de carregamento que sincroniza os campos de visualização e edição
     async function loadUserProfile(userId) {
       if (!userId) return;
 
@@ -814,43 +829,43 @@
 
         let data = userSnap.exists() ? userSnap.data() : {};
 
-        // Se o dado não existir no Firestore, puxa fallback e trata strings vazias
-        const name = (data.name && data.name.trim() !== '') ? data.name : (currentUser ? currentUser.displayName : '') || 'Não informado';
-        const email = (data.email && data.email.trim() !== '') ? data.email : (currentUser ? currentUser.email : '') || 'Não informado';
-        const phone = (data.phone && data.phone.trim() !== '') ? data.phone : 'Não informado';
-        const city = (data.city && data.city.trim() !== '') ? data.city : 'Não informado';
+        const rawName = data.name || (currentUser ? currentUser.displayName : '') || '';
+        const rawEmail = data.email || (currentUser ? currentUser.email : '') || '';
+        const rawPhone = data.phone || '';
+        const rawCity = data.city || '';
 
-        // Atualização da Interface (Troca imediata de qualquer texto estático)
-        btnAuthModal.textContent = `👤 ${name}`;
-        document.getElementById('viewName').textContent = name;
-        document.getElementById('viewEmail').textContent = email;
-        document.getElementById('viewPhone').textContent = phone;
-        document.getElementById('viewCity').textContent = city;
+        // Exibição amigável
+        const nameDisp = rawName.trim() !== '' ? rawName : 'Não informado';
+        const emailDisp = rawEmail.trim() !== '' ? rawEmail : 'Não informado';
+        const phoneDisp = rawPhone.trim() !== '' ? rawPhone : 'Não informado';
+        const cityDisp = rawCity.trim() !== '' ? rawCity : 'Não informado';
 
-        // Preenchimento dos inputs de Edição (deixa limpo se for "Não informado")
-        document.getElementById('profName').value = (name === 'Não informado') ? '' : name;
-        document.getElementById('profEmail').value = (email === 'Não informado') ? '' : email;
-        document.getElementById('profPhone').value = (phone === 'Não informado') ? '' : phone;
-        document.getElementById('profCity').value = (city === 'Não informado') ? '' : city;
+        btnAuthModal.textContent = `👤 ${nameDisp}`;
+        document.getElementById('viewName').textContent = nameDisp;
+        document.getElementById('viewEmail').textContent = emailDisp;
+        document.getElementById('viewPhone').textContent = phoneDisp;
+        document.getElementById('viewCity').textContent = cityDisp;
+
+        // Preenche o formulário de edição limpo se não houver dados, para facilitar a digitação
+        document.getElementById('profName').value = rawName;
+        document.getElementById('profEmail').value = rawEmail;
+        document.getElementById('profPhone').value = rawPhone;
+        document.getElementById('profCity').value = rawCity;
 
       } catch (error) {
         console.error("Erro ao carregar o perfil:", error);
-        if (currentUser) {
-          const fallbackName = currentUser.displayName || 'Usuário';
-          btnAuthModal.textContent = `👤 ${fallbackName}`;
-          document.getElementById('viewName').textContent = fallbackName;
-          document.getElementById('viewEmail').textContent = currentUser.email || 'Não informado';
-          document.getElementById('viewPhone').textContent = 'Não informado';
-          document.getElementById('viewCity').textContent = 'Não informado';
-        }
       }
     }
 
-    // Salvar Alterações do Perfil
+    // Salvar Alterações do Perfil com gravação direta
     formProfile.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
       if (!user) return;
+
+      const btnSave = document.getElementById('btnSaveProfile');
+      btnSave.disabled = true;
+      btnSave.textContent = "Salvando...";
 
       const newNameRaw = document.getElementById('profName').value.trim();
       const newEmail = document.getElementById('profEmail').value.trim();
@@ -860,11 +875,15 @@
       const nameParts = newNameRaw.split(/\s+/);
       if (nameParts.length < 2) {
         alert("Por favor, informe pelo menos o seu Nome e Sobrenome.");
+        btnSave.disabled = false;
+        btnSave.textContent = "Salvar Alterações";
         return;
       }
 
       if (containsForbiddenWords(newNameRaw)) {
         alert("O nome digitado contém palavras não permitidas.");
+        btnSave.disabled = false;
+        btnSave.textContent = "Salvar Alterações";
         return;
       }
 
@@ -875,22 +894,20 @@
           await updateProfile(user, { displayName: formattedName });
         }
 
-        if (newEmail !== user.email) {
+        if (newEmail !== user.email && newEmail !== '') {
           try {
             await verifyBeforeUpdateEmail(user, newEmail);
-            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir.`);
+            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir a troca do e-mail.`);
           } catch (emailErr) {
             if (emailErr.code === 'auth/requires-recent-login') {
               alert("Por motivos de segurança, faça login novamente antes de alterar o seu e-mail.");
               signOut(auth);
               return;
-            } else {
-              throw emailErr;
             }
           }
         }
 
-        // Garante a gravação dos novos dados no Firestore
+        // Grava no Firestore forçando a mesclagem dos novos campos
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: formattedName,
@@ -905,6 +922,9 @@
       } catch (error) {
         console.error("Erro ao salvar perfil:", error);
         alert("Erro ao salvar perfil: " + error.message);
+      } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = "Salvar Alterações";
       }
     });
 
