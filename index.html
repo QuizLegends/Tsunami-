@@ -473,7 +473,7 @@
     <p>&copy; 2026 Trocaê — Conectando necessidades através do escambo inteligente.</p>
   </footer>
 
-  <!-- Firebase v10 SDK -->
+  <!-- Firebase v10 SDK Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -487,20 +487,23 @@
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Configuração do Firebase
     const firebaseConfig = {
-      apiKey: "SEU_API_KEY",
-      authDomain: "SEU_PROJECT_ID.firebaseapp.com",
-      projectId: "SEU_PROJECT_ID",
-      storageBucket: "SEU_PROJECT_ID.appspot.com",
-      messagingSenderId: "SEU_SENDER_ID",
-      appId: "SEU_APP_ID"
+      apiKey: "AIzaSyA-p54xblpgEqdv7eJ-HjN1FvCv12Vz-ZU",
+      authDomain: "trocae-f94e1.firebaseapp.com",
+      databaseURL: "https://trocae-f94e1-default-rtdb.firebaseio.com",
+      projectId: "trocae-f94e1",
+      storageBucket: "trocae-f94e1.firebasestorage.app",
+      messagingSenderId: "727780957751",
+      appId: "1:727780957751:web:0cc36e90d867031b8069b2"
     };
 
+    // Inicializar Firebase e Serviços
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Dom Elements
+    // Elementos da Interface
     const authModal = document.getElementById('authModal');
     const btnAuthModal = document.getElementById('btnAuthModal');
     const btnCloseModal = document.getElementById('btnCloseModal');
@@ -510,7 +513,7 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
-    // Modal Control
+    // Controle da Modal
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
         if (confirm("Deseja sair da sua conta?")) {
@@ -535,7 +538,7 @@
       loginFormContainer.style.display = 'block';
     });
 
-    // Observer de Login
+    // Monitor do Estado de Autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         btnAuthModal.textContent = "Sair (" + (user.displayName || user.email.split('@')[0]) + ")";
@@ -547,7 +550,7 @@
       }
     });
 
-    // Ação: Login E-mail/Senha
+    // Ação: Login com E-mail e Senha
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
@@ -559,7 +562,7 @@
       }
     });
 
-    // Ação: Cadastro E-mail/Senha + Salvar Perfil no Firestore
+    // Ação: Cadastro de Novo Usuário + Gravação no Firestore
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('regName').value;
@@ -572,7 +575,7 @@
         const userCred = await createUserWithEmailAndPassword(auth, email, pass);
         const user = userCred.user;
 
-        // Salvar Perfil Escambo no Firestore
+        // Cria o registro estendido do perfil do usuário no Firestore
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: name,
@@ -589,14 +592,14 @@
       }
     });
 
-    // Ação: Login com Google
+    // Ação: Login via Google
     document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Se o usuário é novo, salva os dados básicos
+        // Registra os dados no Firestore se for o primeiro acesso
         const userRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userRef);
         
