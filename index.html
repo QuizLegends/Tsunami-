@@ -32,7 +32,6 @@
       flex-direction: column;
     }
 
-    /* Header e Marca (Trocaê) */
     header {
       background: rgba(11, 15, 23, 0.85);
       backdrop-filter: blur(10px);
@@ -144,7 +143,6 @@
       color: var(--text-main);
     }
 
-    /* Banner Principal */
     .hero {
       background: var(--bg-gradient);
       padding: 4rem 2rem 5rem 2rem;
@@ -169,7 +167,6 @@
       opacity: 0.95;
     }
 
-    /* Barra de Pesquisa */
     .search-bar {
       max-width: 900px;
       margin: -2.8rem auto 2.5rem auto;
@@ -205,7 +202,6 @@
       border-color: var(--primary-blue);
     }
 
-    /* Grid de Anúncios */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -283,7 +279,6 @@
       font-size: 0.85rem;
     }
 
-    /* MODAL DE AUTENTICAÇÃO E PERFIL */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -338,7 +333,6 @@
       font-weight: bold;
     }
 
-    /* Estilos do Perfil de Usuário */
     .profile-info-group {
       background: var(--dark-bg);
       border: 1px solid var(--border-color);
@@ -402,7 +396,6 @@
 </head>
 <body>
 
-  <!-- Header Nav -->
   <header>
     <div class="nav-container">
       <a href="#" class="logo-container">
@@ -413,12 +406,11 @@
 
       <div class="nav-actions">
         <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
-        <button id="btnAuthModal" class="btn btn-outline">Entrar / Cadastrar</button>
+        <button id="btnAuthModal" class="btn btn-outline">Carregando...</button>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
       <h1>Troque o que tem pelo que precisa</h1>
@@ -426,7 +418,6 @@
     </div>
   </section>
 
-  <!-- Filtros e Busca -->
   <div class="search-bar">
     <input type="text" id="searchInput" class="search-input" placeholder="O que você oferece ou procura?" />
     <select id="categoryFilter" class="category-select">
@@ -447,7 +438,6 @@
     <button id="btnSearch" class="btn btn-gradient">Buscar</button>
   </div>
 
-  <!-- Container Principal -->
   <main class="container">
     <div class="section-title">
       <h2>Oportunidades em Destaque</h2>
@@ -470,12 +460,11 @@
     </div>
   </main>
 
-  <!-- MODAL PRINCIPAL (LOGIN / CADASTRO / PERFIL) -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseModal">&times;</button>
       
-      <!-- ABA LOGIN -->
+      <!-- LOGIN -->
       <div id="loginFormContainer">
         <h2 class="modal-title">Entrar no Trocaê</h2>
         <form id="formLogin">
@@ -494,7 +483,7 @@
         </p>
       </div>
 
-      <!-- ABA CADASTRO -->
+      <!-- CADASTRO -->
       <div id="registerFormContainer" style="display: none;">
         <h2 class="modal-title">Criar Conta no Trocaê</h2>
         <form id="formRegister">
@@ -511,35 +500,33 @@
         </p>
       </div>
 
-      <!-- ABA MEU PERFIL -->
+      <!-- MEU PERFIL -->
       <div id="profileFormContainer" style="display: none;">
         <h2 class="modal-title">Meu Perfil</h2>
         
-        <!-- VISUALIZAÇÃO DOS DADOS -->
         <div id="profileView">
           <div class="profile-info-group">
             <div class="profile-info-item">
               <div class="profile-info-label">Nome de Usuário</div>
-              <div class="profile-info-value" id="viewName">-</div>
+              <div class="profile-info-value" id="viewName">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">E-mail</div>
-              <div class="profile-info-value" id="viewEmail">-</div>
+              <div class="profile-info-value" id="viewEmail">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">WhatsApp</div>
-              <div class="profile-info-value" id="viewPhone">-</div>
+              <div class="profile-info-value" id="viewPhone">Carregando...</div>
             </div>
             <div class="profile-info-item">
               <div class="profile-info-label">Cidade / Endereço</div>
-              <div class="profile-info-value" id="viewCity">-</div>
+              <div class="profile-info-value" id="viewCity">Carregando...</div>
             </div>
           </div>
 
           <button id="btnEnableEdit" type="button" class="btn-edit-trigger">✏️ Editar Perfil</button>
         </div>
 
-        <!-- FORMULÁRIO DE EDIÇÃO (Liberado para Edição) -->
         <form id="formProfile" style="display: none;">
           <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Nome e Sobrenome</label>
           <input type="text" id="profName" class="form-input" required />
@@ -574,7 +561,6 @@
     <p>&copy; 2026 Trocaê — Conectando necessidades através do escambo inteligente.</p>
   </footer>
 
-  <!-- Firebase v10 SDK Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -639,7 +625,7 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
-    async function showModalTab(tab) {
+    function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
       registerFormContainer.style.display = 'none';
       profileFormContainer.style.display = 'none';
@@ -650,7 +636,7 @@
         profileFormContainer.style.display = 'block';
         showProfileMode('view');
         if (auth.currentUser) {
-          await loadUserProfile(auth.currentUser.uid);
+          loadUserProfile(auth.currentUser);
         }
       }
       
@@ -677,7 +663,6 @@
       showProfileMode('view');
     });
 
-    // Google Sign-In redirect result
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -697,7 +682,7 @@
               createdAt: new Date().toISOString()
             });
           }
-          await loadUserProfile(user.uid);
+          await loadUserProfile(user);
         }
       })
       .catch((error) => console.error("Erro no login Google:", error));
@@ -715,6 +700,7 @@
     btnLogoutModal.addEventListener('click', async () => {
       await signOut(auth);
       authModal.style.display = 'none';
+      btnAuthModal.textContent = "Entrar / Cadastrar";
       document.getElementById('viewName').textContent = '-';
       document.getElementById('viewEmail').textContent = '-';
       document.getElementById('viewPhone').textContent = '-';
@@ -735,28 +721,26 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         authElements.forEach(el => el.style.display = 'inline-flex');
-        authModal.style.display = 'none';
-        await loadUserProfile(user.uid);
+        await loadUserProfile(user);
       } else {
         btnAuthModal.textContent = "Entrar / Cadastrar";
         authElements.forEach(el => el.style.display = 'none');
       }
     });
 
-    // Login
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
       try {
         const userCred = await signInWithEmailAndPassword(auth, email, pass);
-        await loadUserProfile(userCred.user.uid);
+        await loadUserProfile(userCred.user);
+        authModal.style.display = 'none';
       } catch (err) {
         alert("Erro no login: " + err.message);
       }
     });
 
-    // Cadastro
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('regName').value.trim();
@@ -795,7 +779,8 @@
           createdAt: new Date().toISOString()
         });
 
-        await loadUserProfile(user.uid);
+        await loadUserProfile(user);
+        authModal.style.display = 'none';
 
       } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
@@ -817,47 +802,59 @@
       }
     });
 
-    // Função de carregamento que sincroniza os campos de visualização e edição
-    async function loadUserProfile(userId) {
-      if (!userId) return;
+    // Função de carregamento resistente a falhas
+    async function loadUserProfile(user) {
+      if (!user) return;
 
-      const currentUser = auth.currentUser;
+      let name = user.displayName || '';
+      let email = user.email || '';
+      let phone = '';
+      let city = '';
 
       try {
-        const userRef = doc(db, "users", userId);
+        const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
 
-        let data = userSnap.exists() ? userSnap.data() : {};
-
-        const rawName = data.name || (currentUser ? currentUser.displayName : '') || '';
-        const rawEmail = data.email || (currentUser ? currentUser.email : '') || '';
-        const rawPhone = data.phone || '';
-        const rawCity = data.city || '';
-
-        // Exibição amigável
-        const nameDisp = rawName.trim() !== '' ? rawName : 'Não informado';
-        const emailDisp = rawEmail.trim() !== '' ? rawEmail : 'Não informado';
-        const phoneDisp = rawPhone.trim() !== '' ? rawPhone : 'Não informado';
-        const cityDisp = rawCity.trim() !== '' ? rawCity : 'Não informado';
-
-        btnAuthModal.textContent = `👤 ${nameDisp}`;
-        document.getElementById('viewName').textContent = nameDisp;
-        document.getElementById('viewEmail').textContent = emailDisp;
-        document.getElementById('viewPhone').textContent = phoneDisp;
-        document.getElementById('viewCity').textContent = cityDisp;
-
-        // Preenche o formulário de edição limpo se não houver dados, para facilitar a digitação
-        document.getElementById('profName').value = rawName;
-        document.getElementById('profEmail').value = rawEmail;
-        document.getElementById('profPhone').value = rawPhone;
-        document.getElementById('profCity').value = rawCity;
-
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          if (data.name) name = data.name;
+          if (data.email) email = data.email;
+          if (data.phone) phone = data.phone;
+          if (data.city) city = data.city;
+        } else {
+          // Se o documento Firestore ainda não existia, cria ele imediatamente
+          await setDoc(userRef, {
+            uid: user.uid,
+            name: name || "Usuário",
+            email: email,
+            phone: "",
+            city: "",
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        }
       } catch (error) {
-        console.error("Erro ao carregar o perfil:", error);
+        console.warn("Aviso ao buscar Firestore (Usando dados locais do Auth):", error);
       }
+
+      // Trata textos para exibição gráfica na tela
+      const dispName = name.trim() !== '' ? name : 'Usuário';
+      const dispEmail = email.trim() !== '' ? email : 'Não informado';
+      const dispPhone = phone.trim() !== '' ? phone : 'Não informado';
+      const dispCity = city.trim() !== '' ? city : 'Não informado';
+
+      btnAuthModal.textContent = `👤 ${dispName}`;
+      document.getElementById('viewName').textContent = dispName;
+      document.getElementById('viewEmail').textContent = dispEmail;
+      document.getElementById('viewPhone').textContent = dispPhone;
+      document.getElementById('viewCity').textContent = dispCity;
+
+      // Alimenta os campos da aba de edição
+      document.getElementById('profName').value = name;
+      document.getElementById('profEmail').value = email;
+      document.getElementById('profPhone').value = phone;
+      document.getElementById('profCity').value = city;
     }
 
-    // Salvar Alterações do Perfil com gravação direta
     formProfile.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -897,7 +894,7 @@
         if (newEmail !== user.email && newEmail !== '') {
           try {
             await verifyBeforeUpdateEmail(user, newEmail);
-            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir a troca do e-mail.`);
+            alert(`Um e-mail de verificação foi enviado para ${newEmail}. Confirme para concluir a alteração.`);
           } catch (emailErr) {
             if (emailErr.code === 'auth/requires-recent-login') {
               alert("Por motivos de segurança, faça login novamente antes de alterar o seu e-mail.");
@@ -907,7 +904,6 @@
           }
         }
 
-        // Grava no Firestore forçando a mesclagem dos novos campos
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: formattedName,
@@ -917,7 +913,7 @@
         }, { merge: true });
 
         alert("Perfil atualizado com sucesso!");
-        await loadUserProfile(user.uid);
+        await loadUserProfile(auth.currentUser);
         showProfileMode('view');
       } catch (error) {
         console.error("Erro ao salvar perfil:", error);
