@@ -481,7 +481,8 @@
       onAuthStateChanged, 
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
-      signInWithPopup, 
+      signInWithRedirect,
+      getRedirectResult,
       GoogleAuthProvider,
       signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -513,6 +514,33 @@
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
 
+    // Processa o retorno do login do Google via Redirecionamento
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          const user = result.user;
+          const userRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(userRef);
+          
+          if (!docSnap.exists()) {
+            await setDoc(userRef, {
+              uid: user.uid,
+              name: user.displayName || "Usuário Google",
+              email: user.email,
+              photoURL: user.photoURL || "",
+              city: "Não informada",
+              rating: 5.0,
+              tradesCount: 0,
+              createdAt: new Date().toISOString()
+            });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Erro no retorno do login Google:", error);
+        alert("Erro no login do Google: " + error.message);
+      });
+
     // Controle da Modal
     btnAuthModal.addEventListener('click', () => {
       if (auth.currentUser) {
@@ -525,7 +553,7 @@
     });
 
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
-    
+
     linkToRegister.addEventListener('click', (e) => {
       e.preventDefault();
       loginFormContainer.style.display = 'none';
@@ -575,7 +603,6 @@
         const userCred = await createUserWithEmailAndPassword(auth, email, pass);
         const user = userCred.user;
 
-        // Cria o registro estendido do perfil do usuário no Firestore
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           name: name,
@@ -592,31 +619,13 @@
       }
     });
 
-    // Ação: Login via Google
+    // Ação: Login via Google com Redirecionamento
     document.getElementById('btnGoogleAuth').addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        // Registra os dados no Firestore se for o primeiro acesso
-        const userRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userRef);
-        
-        if (!docSnap.exists()) {
-          await setDoc(userRef, {
-            uid: user.uid,
-            name: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            city: "Não informada",
-            rating: 5.0,
-            tradesCount: 0,
-            createdAt: new Date().toISOString()
-          });
-        }
+        await signInWithRedirect(auth, provider);
       } catch (err) {
-        alert("Erro no Google Auth: " + err.message);
+        alert("Erro ao iniciar login com Google: " + err.message);
       }
     });
   </script>
