@@ -188,15 +188,27 @@
     .card-gallery-preview {
       position: relative;
       height: 220px;
-      background: #000;
+      background: #1e293b;
       cursor: pointer;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .card-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .no-image-placeholder {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .gallery-badge {
@@ -453,7 +465,7 @@
             <button id="btnEnableEdit" type="button" class="btn btn-outline" style="width: 100%; justify-content: center;">✏️ Editar Perfil</button>
           </div>
 
-          <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL CORRIGIDO -->
+          <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL -->
           <form id="formProfile" style="display: none;">
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Nome e Sobrenome</label>
             <input type="text" id="profName" class="form-input" required />
@@ -698,7 +710,7 @@
       document.getElementById('profCity').value = data.city || '';
     }
 
-    // SALVAR ALTERAÇÕES DO PERFIL (CORRIGIDO)
+    // SALVAR ALTERAÇÕES DO PERFIL
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -713,14 +725,12 @@
         const newPhone = document.getElementById('profPhone').value.trim();
         const newCity = document.getElementById('profCity').value.trim();
 
-        // Atualiza perfil na coleção users
         await updateDoc(doc(db, "users", user.uid), {
           name: newName,
           phone: newPhone,
           city: newCity
         });
 
-        // Atualiza o DisplayName na conta Auth do Firebase
         await updateProfile(user, { displayName: newName });
 
         alert("Perfil atualizado com sucesso!");
@@ -734,15 +744,9 @@
       }
     });
 
-    // COMPRESSOR E LEITOR DE ATÉ 6 FOTOS (CORRIGIDO)
-    async function processMultipleImages(fileList) {
-      const files = Array.from(fileList).slice(0, 6);
-      const promises = files.map(file => processImageFile(file));
-      return Promise.all(promises);
-    }
-
+    // COMPRESSOR DE IMAGENS
     function processImageFile(file) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
@@ -760,15 +764,21 @@
             ctx.drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL('image/jpeg', 0.7));
           };
-          img.onerror = () => reject("Erro ao processar imagem.");
+          img.onerror = () => resolve(null);
           img.src = event.target.result;
         };
-        reader.onerror = () => reject("Erro ao ler arquivo.");
+        reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
       });
     }
 
-    // SALVAR / EDITAR ANÚNCIO (CORRIGIDO PARA AS 6 FOTOS)
+    async function processMultipleImages(fileList) {
+      const files = Array.from(fileList).slice(0, 6);
+      const results = await Promise.all(files.map(file => processImageFile(file)));
+      return results.filter(res => res !== null);
+    }
+
+    // SALVAR / EDITAR ANÚNCIO (CORRIGIDO)
     document.getElementById('formNewAd').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -802,11 +812,18 @@
         const userPhone = currentUserData?.phone || "";
 
         if (adId) {
+          const existingOffer = allOffers.find(o => o.id === adId);
           const updateData = {
             title, type, category, wants, description,
             userName, userCity, userPhone
           };
-          if (images.length > 0) updateData.images = images;
+          // Se enviou novas imagens, atualiza; caso contrário mantém as antigas
+          if (images.length > 0) {
+            updateData.images = images;
+          } else if (existingOffer && existingOffer.images) {
+            updateData.images = existingOffer.images;
+          }
+
           await updateDoc(doc(db, "offers", adId), updateData);
           alert("Anúncio atualizado com sucesso!");
         } else {
@@ -814,7 +831,7 @@
             userId: user.uid,
             userName, userCity, userPhone,
             title, type, category, wants, description,
-            images,
+            images: images,
             createdAt: new Date().toISOString()
           });
           alert("Anúncio publicado com sucesso!");
@@ -838,6 +855,7 @@
       renderMyAds();
     });
 
+    // RENDERIZAR ANÚNCIOS (CORRIGIDO PARA EXIBIR A IMAGEM)
     function renderOffers(offers) {
       if (offers.length === 0) {
         offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>`;
@@ -847,14 +865,29 @@
       offersGrid.innerHTML = offers.map(offer => {
         const badgeClass = offer.type === 'servico' ? 'badge-servico' : 'badge-produto';
         const typeText = offer.type === 'servico' ? 'Serviço' : 'Produto';
-        const images = offer.images || (offer.imageUrl ? [offer.imageUrl] : []);
+        
+        // Garante a busca da foto seja pelo array images ou campo legados imageUrl
+        let imagesList = [];
+        if (Array.isArray(offer.images) && offer.images.length > 0) {
+          imagesList = offer.images;
+        } else if (offer.imageUrl) {
+          imagesList = [offer.imageUrl];
+        }
         
         let galleryHtml = '';
-        if (images.length > 0) {
+        if (imagesList.length > 0) {
           galleryHtml = `
             <div class="card-gallery-preview" onclick="openGallery('${offer.id}', 0)">
-              <img src="${images[0]}" class="card-img" alt="${escapeHtml(offer.title)}" />
-              ${images.length > 1 ? `<div class="gallery-badge">📷 1/${images.length}</div>` : ''}
+              <img src="${imagesList[0]}" class="card-img" alt="${escapeHtml(offer.title)}" />
+              ${imagesList.length > 1 ? `<div class="gallery-badge">📷 1/${imagesList.length}</div>` : ''}
+            </div>
+          `;
+        } else {
+          galleryHtml = `
+            <div class="card-gallery-preview" style="cursor: default;">
+              <div class="no-image-placeholder">
+                <span>🖼️ Sem foto</span>
+              </div>
             </div>
           `;
         }
@@ -907,8 +940,14 @@
     window.openGallery = function(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
-      currentGalleryImages = offer.images || (offer.imageUrl ? [offer.imageUrl] : []);
-      if (currentGalleryImages.length === 0) return;
+
+      if (Array.isArray(offer.images) && offer.images.length > 0) {
+        currentGalleryImages = offer.images;
+      } else if (offer.imageUrl) {
+        currentGalleryImages = [offer.imageUrl];
+      } else {
+        return;
+      }
 
       currentGalleryIndex = startIndex;
       updateGalleryView();
