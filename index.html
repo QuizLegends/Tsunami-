@@ -307,21 +307,21 @@
       justify-content: center; align-items: center;
     }
     .gallery-img-container {
-      position: relative; max-width: 90vw; max-height: 80vh;
+      position: relative; width: 90vw; max-width: 800px; height: 70vh;
       display: flex; justify-content: center; align-items: center;
     }
     .gallery-img-full {
-      max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px;
+      max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;
     }
     .gallery-nav-btn {
       position: absolute; top: 50%; transform: translateY(-50%);
       background: rgba(255,255,255,0.2); color: #fff;
       border: none; padding: 1rem; cursor: pointer;
-      font-size: 1.5rem; border-radius: 50%; user-select: none;
+      font-size: 1.5rem; border-radius: 50%; user-select: none; z-index: 10;
     }
     .gallery-nav-btn:hover { background: rgba(255,255,255,0.4); }
-    .gallery-prev { left: -3rem; }
-    .gallery-next { right: -3rem; }
+    .gallery-prev { left: 1rem; }
+    .gallery-next { right: 1rem; }
 
     .my-ad-item {
       background: var(--dark-bg); border: 1px solid var(--border-color);
@@ -470,6 +470,9 @@
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Nome e Sobrenome</label>
             <input type="text" id="profName" class="form-input" required />
 
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">E-mail</label>
+            <input type="email" id="profEmail" class="form-input" required />
+
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">WhatsApp</label>
             <input type="tel" id="profPhone" class="form-input" required />
 
@@ -561,11 +564,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
       getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-      createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult,
-      updateProfile, GoogleAuthProvider, signOut 
+      createUserWithEmailAndPassword, signInWithRedirect,
+      updateProfile, updateEmail, GoogleAuthProvider, signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
-      getFirestore, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc,
+      getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc,
       collection, query, orderBy, onSnapshot 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -586,6 +589,7 @@
     let unsubscribeProfile = null;
     let currentUserData = null;
     let allOffers = [];
+    let usersMap = {}; // Guarda dados dos usuários em tempo real
 
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
@@ -678,6 +682,15 @@
       authModal.style.display = 'none';
     });
 
+    // ESCUTAR LISTA DE USUÁRIOS
+    onSnapshot(collection(db, "users"), (snapshot) => {
+      usersMap = {};
+      snapshot.forEach(docSnap => {
+        usersMap[docSnap.id] = docSnap.data();
+      });
+      renderOffers(allOffers);
+    });
+
     onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
 
@@ -699,18 +712,20 @@
 
     function renderProfileData(data) {
       const name = data.name || 'Usuário';
+      const email = data.email || auth.currentUser?.email || '-';
       btnAuthModal.textContent = `👤 ${name}`;
       document.getElementById('viewName').textContent = name;
-      document.getElementById('viewEmail').textContent = data.email || '-';
+      document.getElementById('viewEmail').textContent = email;
       document.getElementById('viewPhone').textContent = data.phone || 'Não informado';
       document.getElementById('viewCity').textContent = data.city || 'Não informado';
 
       document.getElementById('profName').value = name;
+      document.getElementById('profEmail').value = email;
       document.getElementById('profPhone').value = data.phone || '';
       document.getElementById('profCity').value = data.city || '';
     }
 
-    // SALVAR ALTERAÇÕES DO PERFIL
+    // SALVAR ALTERAÇÕES DO PERFIL (COM EDIÇÃO DE E-MAIL E ATUALIZAÇÃO DO WHATSAPP)
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -722,11 +737,17 @@
 
       try {
         const newName = document.getElementById('profName').value.trim();
+        const newEmail = document.getElementById('profEmail').value.trim();
         const newPhone = document.getElementById('profPhone').value.trim();
         const newCity = document.getElementById('profCity').value.trim();
 
+        if (newEmail !== user.email) {
+          await updateEmail(user, newEmail);
+        }
+
         await updateDoc(doc(db, "users", user.uid), {
           name: newName,
+          email: newEmail,
           phone: newPhone,
           city: newCity
         });
@@ -778,7 +799,7 @@
       return results.filter(res => res !== null);
     }
 
-    // SALVAR / EDITAR ANÚNCIO (CORRIGIDO)
+    // SALVAR / EDITAR ANÚNCIO
     document.getElementById('formNewAd').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -809,15 +830,13 @@
 
         const userName = currentUserData?.name || user.displayName || "Usuário";
         const userCity = currentUserData?.city || "Brasil";
-        const userPhone = currentUserData?.phone || "";
 
         if (adId) {
           const existingOffer = allOffers.find(o => o.id === adId);
           const updateData = {
             title, type, category, wants, description,
-            userName, userCity, userPhone
+            userName, userCity
           };
-          // Se enviou novas imagens, atualiza; caso contrário mantém as antigas
           if (images.length > 0) {
             updateData.images = images;
           } else if (existingOffer && existingOffer.images) {
@@ -829,7 +848,7 @@
         } else {
           await addDoc(collection(db, "offers"), {
             userId: user.uid,
-            userName, userCity, userPhone,
+            userName, userCity,
             title, type, category, wants, description,
             images: images,
             createdAt: new Date().toISOString()
@@ -855,7 +874,7 @@
       renderMyAds();
     });
 
-    // RENDERIZAR ANÚNCIOS (CORRIGIDO PARA EXIBIR A IMAGEM)
+    // RENDERIZAR ANÚNCIOS (DADOS EM TEMPO REAL)
     function renderOffers(offers) {
       if (offers.length === 0) {
         offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>`;
@@ -866,7 +885,6 @@
         const badgeClass = offer.type === 'servico' ? 'badge-servico' : 'badge-produto';
         const typeText = offer.type === 'servico' ? 'Serviço' : 'Produto';
         
-        // Garante a busca da foto seja pelo array images ou campo legados imageUrl
         let imagesList = [];
         if (Array.isArray(offer.images) && offer.images.length > 0) {
           imagesList = offer.images;
@@ -877,7 +895,7 @@
         let galleryHtml = '';
         if (imagesList.length > 0) {
           galleryHtml = `
-            <div class="card-gallery-preview" onclick="openGallery('${offer.id}', 0)">
+            <div class="card-gallery-preview" data-offer-id="${offer.id}">
               <img src="${imagesList[0]}" class="card-img" alt="${escapeHtml(offer.title)}" />
               ${imagesList.length > 1 ? `<div class="gallery-badge">📷 1/${imagesList.length}</div>` : ''}
             </div>
@@ -892,7 +910,11 @@
           `;
         }
 
-        const phoneClean = (offer.userPhone || '').replace(/\D/g, '');
+        // Pega o WhatsApp atual do criador através do mapa do Firestore
+        const authorProfile = usersMap[offer.userId];
+        const currentPhone = authorProfile?.phone || offer.userPhone || '';
+        const phoneClean = currentPhone.replace(/\D/g, '');
+
         const waBtn = phoneClean ? 
           `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
           `<span style="font-size:0.75rem; color:var(--text-muted);">Sem WhatsApp</span>`;
@@ -914,8 +936,8 @@
               </div>
               <div class="card-footer">
                 <div class="user-info">
-                  <span>👤 ${escapeHtml(offer.userName)}</span>
-                  <span class="user-location">📍 ${escapeHtml(offer.userCity)}</span>
+                  <span>👤 ${escapeHtml(authorProfile?.name || offer.userName)}</span>
+                  <span class="user-location">📍 ${escapeHtml(authorProfile?.city || offer.userCity)}</span>
                 </div>
                 ${waBtn}
               </div>
@@ -923,6 +945,14 @@
           </div>
         `;
       }).join('');
+
+      // Adiciona manipulador de evento diretamente nos elementos da galeria
+      document.querySelectorAll('.card-gallery-preview[data-offer-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-offer-id');
+          openGallery(id, 0);
+        });
+      });
     }
 
     window.toggleDesc = function(id) {
@@ -937,7 +967,7 @@
       }
     };
 
-    window.openGallery = function(offerId, startIndex) {
+    function openGallery(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
 
@@ -952,19 +982,24 @@
       currentGalleryIndex = startIndex;
       updateGalleryView();
       galleryViewer.style.display = 'flex';
-    };
+    }
 
     function updateGalleryView() {
+      if (currentGalleryImages.length === 0) return;
       document.getElementById('galleryFullImg').src = currentGalleryImages[currentGalleryIndex];
       document.getElementById('galleryCounter').textContent = `${currentGalleryIndex + 1} de ${currentGalleryImages.length}`;
     }
 
-    document.getElementById('btnPrevImg').addEventListener('click', () => {
+    document.getElementById('btnPrevImg').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentGalleryImages.length <= 1) return;
       currentGalleryIndex = (currentGalleryIndex - 1 + currentGalleryImages.length) % currentGalleryImages.length;
       updateGalleryView();
     });
 
-    document.getElementById('btnNextImg').addEventListener('click', () => {
+    document.getElementById('btnNextImg').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentGalleryImages.length <= 1) return;
       currentGalleryIndex = (currentGalleryIndex + 1) % currentGalleryImages.length;
       updateGalleryView();
     });
@@ -1063,11 +1098,12 @@
       if (nameParts.length < 2) return alert("Informe Nome e Sobrenome.");
       
       const formattedName = `${nameParts[0]} ${nameParts[1]}`;
+      const regEmail = document.getElementById('regEmail').value.trim();
       try {
-        const userCred = await createUserWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regPassword').value);
+        const userCred = await createUserWithEmailAndPassword(auth, regEmail, document.getElementById('regPassword').value);
         await updateProfile(userCred.user, { displayName: formattedName });
         await setDoc(doc(db, "users", userCred.user.uid), {
-          uid: userCred.user.uid, name: formattedName, email: userCred.user.email,
+          uid: userCred.user.uid, name: formattedName, email: regEmail,
           city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
           createdAt: new Date().toISOString()
         }, { merge: true });
