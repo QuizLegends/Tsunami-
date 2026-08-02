@@ -579,7 +579,8 @@
       getFirestore, 
       doc, 
       setDoc, 
-      getDoc 
+      getDoc,
+      onSnapshot 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -595,6 +596,9 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // Variável global para gerenciar o escutador em tempo real do Firestore
+    let unsubscribeProfile = null;
 
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
@@ -635,9 +639,6 @@
       if (tab === 'profile') {
         profileFormContainer.style.display = 'block';
         showProfileMode('view');
-        if (auth.currentUser) {
-          loadUserProfile(auth.currentUser);
-        }
       }
       
       authModal.style.display = 'flex';
@@ -680,9 +681,8 @@
               rating: 5.0,
               tradesCount: 0,
               createdAt: new Date().toISOString()
-            });
+            }, { merge: true });
           }
-          await loadUserProfile(user);
         }
       })
       .catch((error) => console.error("Erro no login Google:", error));
@@ -698,14 +698,26 @@
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
 
     btnLogoutModal.addEventListener('click', async () => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
       await signOut(auth);
       authModal.style.display = 'none';
+      resetProfileUI();
+    });
+
+    function resetProfileUI() {
       btnAuthModal.textContent = "Entrar / Cadastrar";
       document.getElementById('viewName').textContent = '-';
       document.getElementById('viewEmail').textContent = '-';
       document.getElementById('viewPhone').textContent = '-';
       document.getElementById('viewCity').textContent = '-';
-    });
+      document.getElementById('profName').value = '';
+      document.getElementById('profEmail').value = '';
+      document.getElementById('profPhone').value = '';
+      document.getElementById('profCity').value = '';
+    }
 
     linkToRegister.addEventListener('click', (e) => {
       e.preventDefault();
@@ -717,24 +729,85 @@
       showModalTab('login');
     });
 
-    // Escutador principal de autenticação
-    onAuthStateChanged(auth, async (user) => {
+    // ESCUTADOR PRINCIPAL DE AUTENTICAÇÃO
+    onAuthStateChanged(auth, (user) => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       if (user) {
         authElements.forEach(el => el.style.display = 'inline-flex');
-        await loadUserProfile(user);
+        
+        // Escuta alterações do documento em tempo real no Firestore
+        const userRef = doc(db, "users", user.uid);
+        unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            renderProfileData({
+              name: data.name || user.displayName || 'Usuário',
+              email: data.email || user.email || '',
+              phone: data.phone || '',
+              city: data.city || ''
+            });
+          } else {
+            // Cria o documento no Firestore se ele não existir
+            setDoc(userRef, {
+              uid: user.uid,
+              name: user.displayName || "Usuário",
+              email: user.email || "",
+              phone: "",
+              city: "",
+              createdAt: new Date().toISOString()
+            }, { merge: true });
+
+            renderProfileData({
+              name: user.displayName || 'Usuário',
+              email: user.email || '',
+              phone: '',
+              city: ''
+            });
+          }
+        }, (error) => {
+          console.error("Erro ao escutar Firestore:", error);
+          renderProfileData({
+            name: user.displayName || 'Usuário',
+            email: user.email || '',
+            phone: '',
+            city: ''
+          });
+        });
+
       } else {
-        btnAuthModal.textContent = "Entrar / Cadastrar";
+        resetProfileUI();
         authElements.forEach(el => el.style.display = 'none');
       }
     });
+
+    function renderProfileData({ name, email, phone, city }) {
+      const dispName = name.trim() !== '' ? name : 'Usuário';
+      const dispEmail = email.trim() !== '' ? email : 'Não informado';
+      const dispPhone = phone.trim() !== '' ? phone : 'Não informado';
+      const dispCity = city.trim() !== '' ? city : 'Não informado';
+
+      btnAuthModal.textContent = `👤 ${dispName}`;
+      document.getElementById('viewName').textContent = dispName;
+      document.getElementById('viewEmail').textContent = dispEmail;
+      document.getElementById('viewPhone').textContent = dispPhone;
+      document.getElementById('viewCity').textContent = dispCity;
+
+      document.getElementById('profName').value = name;
+      document.getElementById('profEmail').value = email;
+      document.getElementById('profPhone').value = phone;
+      document.getElementById('profCity').value = city;
+    }
 
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
       try {
-        const userCred = await signInWithEmailAndPassword(auth, email, pass);
-        await loadUserProfile(userCred.user);
+        await signInWithEmailAndPassword(auth, email, pass);
         authModal.style.display = 'none';
       } catch (err) {
         alert("Erro no login: " + err.message);
@@ -777,9 +850,8 @@
           rating: 5.0,
           tradesCount: 0,
           createdAt: new Date().toISOString()
-        });
+        }, { merge: true });
 
-        await loadUserProfile(user);
         authModal.style.display = 'none';
 
       } catch (err) {
@@ -801,59 +873,6 @@
         alert("Erro ao iniciar login com Google: " + err.message);
       }
     });
-
-    // Função de carregamento resistente a falhas
-    async function loadUserProfile(user) {
-      if (!user) return;
-
-      let name = user.displayName || '';
-      let email = user.email || '';
-      let phone = '';
-      let city = '';
-
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          if (data.name) name = data.name;
-          if (data.email) email = data.email;
-          if (data.phone) phone = data.phone;
-          if (data.city) city = data.city;
-        } else {
-          // Se o documento Firestore ainda não existia, cria ele imediatamente
-          await setDoc(userRef, {
-            uid: user.uid,
-            name: name || "Usuário",
-            email: email,
-            phone: "",
-            city: "",
-            createdAt: new Date().toISOString()
-          }, { merge: true });
-        }
-      } catch (error) {
-        console.warn("Aviso ao buscar Firestore (Usando dados locais do Auth):", error);
-      }
-
-      // Trata textos para exibição gráfica na tela
-      const dispName = name.trim() !== '' ? name : 'Usuário';
-      const dispEmail = email.trim() !== '' ? email : 'Não informado';
-      const dispPhone = phone.trim() !== '' ? phone : 'Não informado';
-      const dispCity = city.trim() !== '' ? city : 'Não informado';
-
-      btnAuthModal.textContent = `👤 ${dispName}`;
-      document.getElementById('viewName').textContent = dispName;
-      document.getElementById('viewEmail').textContent = dispEmail;
-      document.getElementById('viewPhone').textContent = dispPhone;
-      document.getElementById('viewCity').textContent = dispCity;
-
-      // Alimenta os campos da aba de edição
-      document.getElementById('profName').value = name;
-      document.getElementById('profEmail').value = email;
-      document.getElementById('profPhone').value = phone;
-      document.getElementById('profCity').value = city;
-    }
 
     formProfile.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -898,7 +917,7 @@
           } catch (emailErr) {
             if (emailErr.code === 'auth/requires-recent-login') {
               alert("Por motivos de segurança, faça login novamente antes de alterar o seu e-mail.");
-              signOut(auth);
+              await signOut(auth);
               return;
             }
           }
@@ -913,7 +932,6 @@
         }, { merge: true });
 
         alert("Perfil atualizado com sucesso!");
-        await loadUserProfile(auth.currentUser);
         showProfileMode('view');
       } catch (error) {
         console.error("Erro ao salvar perfil:", error);
@@ -923,7 +941,6 @@
         btnSave.textContent = "Salvar Alterações";
       }
     });
-
   </script>
 </body>
 </html>
