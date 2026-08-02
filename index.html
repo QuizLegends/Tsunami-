@@ -677,16 +677,22 @@
     let allOffers = [];
 
     const FORBIDDEN_WORDS = [
-      "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
-      "pinto", "merda", "cacete", "arrombado", "cu", "desgraça", "viado", 
-      "bastardo", "otario", "piranha", "vagabundo", "vagabunda", "corno"
-    ];
+  "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
+  "pinto", "merda", "cacete", "arrombado", "desgraca", "viado", 
+  "bastardo", "otario", "piranha", "vagabundo", "vagabunda", "corno"
+];
 
-    function containsForbiddenWords(text) {
-      if (!text) return false;
-      const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return FORBIDDEN_WORDS.some(word => normalized.includes(word));
-    }
+function containsForbiddenWords(text) {
+  if (!text) return false;
+  // Normaliza o texto (remove acentos e transforma em minúsculas)
+  const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  // Verifica se a PALAVRA EXATA/ISOLADA está no texto (usando limites \b)
+  return FORBIDDEN_WORDS.some(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'i');
+    return regex.test(normalized);
+  });
+}
 
     // ELEMENTOS DOM
     const authModal = document.getElementById('authModal');
