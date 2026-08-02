@@ -207,6 +207,8 @@
       padding: 0.2rem 0.6rem;
       border-radius: 12px;
       font-size: 0.75rem;
+      font-weight: bold;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .card-body { padding: 1.2rem; display: flex; flex-direction: column; flex: 1; }
@@ -220,25 +222,18 @@
 
     .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
 
-    /* Descrição Recolher / Expandir */
-    .description-container {
-      margin-bottom: 0.8rem;
-    }
+    .description-container { margin-bottom: 0.8rem; }
     .card-desc-text {
-      font-size: 0.88rem; color: var(--text-muted);
-      line-height: 1.4;
+      font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;
     }
     .card-desc-text.collapsed {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
     }
     .btn-toggle-desc {
-      background: none; border: none;
-      color: var(--primary-blue);
-      font-size: 0.8rem; cursor: pointer;
-      font-weight: bold; margin-top: 0.3rem; padding: 0;
+      background: none; border: none; color: var(--primary-blue);
+      font-size: 0.8rem; cursor: pointer; font-weight: bold;
+      margin-top: 0.3rem; padding: 0;
     }
 
     .card-wants {
@@ -258,7 +253,6 @@
     .user-info { display: flex; flex-direction: column; }
     .user-location { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Modais */
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
@@ -281,7 +275,6 @@
 
     .modal-title { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
 
-    /* Abas do Perfil */
     .profile-tabs {
       display: flex; border-bottom: 1px solid var(--border-color);
       margin-bottom: 1.2rem;
@@ -292,11 +285,9 @@
       border-bottom: 2px solid transparent;
     }
     .tab-btn.active {
-      color: var(--primary-blue);
-      border-bottom-color: var(--primary-blue);
+      color: var(--primary-blue); border-bottom-color: var(--primary-blue);
     }
 
-    /* Modal de Zoom da Galeria */
     .gallery-viewer-modal {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.95); z-index: 2000;
@@ -462,12 +453,10 @@
             <button id="btnEnableEdit" type="button" class="btn btn-outline" style="width: 100%; justify-content: center;">✏️ Editar Perfil</button>
           </div>
 
+          <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL CORRIGIDO -->
           <form id="formProfile" style="display: none;">
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Nome e Sobrenome</label>
             <input type="text" id="profName" class="form-input" required />
-
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">E-mail</label>
-            <input type="email" id="profEmail" class="form-input" required />
 
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">WhatsApp</label>
             <input type="tel" id="profPhone" class="form-input" required />
@@ -482,7 +471,6 @@
           <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1.5rem; border-color: var(--primary-red); color: var(--primary-red);">Sair da Conta</button>
         </div>
 
-        <!-- ABA DE MEUS ANÚNCIOS -->
         <div id="tabAdsContent" style="display: none;">
           <div id="myAdsList">
             <p style="color: var(--text-muted);">Carregando seus anúncios...</p>
@@ -562,7 +550,7 @@
     import { 
       getAuth, onAuthStateChanged, signInWithEmailAndPassword,
       createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult,
-      updateProfile, verifyBeforeUpdateEmail, GoogleAuthProvider, signOut 
+      updateProfile, GoogleAuthProvider, signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
       getFirestore, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc,
@@ -587,7 +575,6 @@
     let currentUserData = null;
     let allOffers = [];
 
-    // Galeria Modal Estado
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
 
@@ -603,7 +590,6 @@
       return FORBIDDEN_WORDS.some(word => new RegExp(`\\b${word}\\b`, 'i').test(normalized));
     }
 
-    // ELEMENTOS DOM
     const authModal = document.getElementById('authModal');
     const newAdModal = document.getElementById('newAdModal');
     const galleryViewer = document.getElementById('galleryViewer');
@@ -626,7 +612,6 @@
     const typeFilter = document.getElementById('typeFilter');
     const btnSearch = document.getElementById('btnSearch');
 
-    // ABAS DO PERFIL
     tabInfoBtn.addEventListener('click', () => {
       tabInfoBtn.classList.add('active');
       tabAdsBtn.classList.remove('active');
@@ -681,7 +666,6 @@
       authModal.style.display = 'none';
     });
 
-    // OBSERVAR AUTENTICAÇÃO
     onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
 
@@ -710,18 +694,50 @@
       document.getElementById('viewCity').textContent = data.city || 'Não informado';
 
       document.getElementById('profName').value = name;
-      document.getElementById('profEmail').value = data.email || '';
       document.getElementById('profPhone').value = data.phone || '';
       document.getElementById('profCity').value = data.city || '';
     }
 
-    // PROCESSSAR ATÉ 6 FOTOS
-    async function processMultipleImages(files) {
-      const maxFiles = Math.min(files.length, 6);
-      const promises = [];
-      for (let i = 0; i < maxFiles; i++) {
-        promises.push(processImageFile(files[i]));
+    // SALVAR ALTERAÇÕES DO PERFIL (CORRIGIDO)
+    document.getElementById('formProfile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const btnSave = document.getElementById('btnSaveProfile');
+      btnSave.disabled = true;
+      btnSave.textContent = "Salvando...";
+
+      try {
+        const newName = document.getElementById('profName').value.trim();
+        const newPhone = document.getElementById('profPhone').value.trim();
+        const newCity = document.getElementById('profCity').value.trim();
+
+        // Atualiza perfil na coleção users
+        await updateDoc(doc(db, "users", user.uid), {
+          name: newName,
+          phone: newPhone,
+          city: newCity
+        });
+
+        // Atualiza o DisplayName na conta Auth do Firebase
+        await updateProfile(user, { displayName: newName });
+
+        alert("Perfil atualizado com sucesso!");
+        document.getElementById('profileView').style.display = 'block';
+        document.getElementById('formProfile').style.display = 'none';
+      } catch (err) {
+        alert("Erro ao salvar perfil: " + err.message);
+      } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = "Salvar Alterações";
       }
+    });
+
+    // COMPRESSOR E LEITOR DE ATÉ 6 FOTOS (CORRIGIDO)
+    async function processMultipleImages(fileList) {
+      const files = Array.from(fileList).slice(0, 6);
+      const promises = files.map(file => processImageFile(file));
       return Promise.all(promises);
     }
 
@@ -744,13 +760,15 @@
             ctx.drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL('image/jpeg', 0.7));
           };
+          img.onerror = () => reject("Erro ao processar imagem.");
           img.src = event.target.result;
         };
+        reader.onerror = () => reject("Erro ao ler arquivo.");
         reader.readAsDataURL(file);
       });
     }
 
-    // SALVAR / EDITAR ANÚNCIO
+    // SALVAR / EDITAR ANÚNCIO (CORRIGIDO PARA AS 6 FOTOS)
     document.getElementById('formNewAd').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -770,7 +788,8 @@
       }
 
       const btnPublish = document.getElementById('btnPublishAd');
-      btnPublish.disabled = true; btnPublish.textContent = "Salvando...";
+      btnPublish.disabled = true; 
+      btnPublish.textContent = "Processando fotos e salvando...";
 
       try {
         let images = [];
@@ -783,7 +802,6 @@
         const userPhone = currentUserData?.phone || "";
 
         if (adId) {
-          // Edição
           const updateData = {
             title, type, category, wants, description,
             userName, userCity, userPhone
@@ -792,7 +810,6 @@
           await updateDoc(doc(db, "offers", adId), updateData);
           alert("Anúncio atualizado com sucesso!");
         } else {
-          // Criação
           await addDoc(collection(db, "offers"), {
             userId: user.uid,
             userName, userCity, userPhone,
@@ -806,13 +823,13 @@
         newAdModal.style.display = 'none';
         renderMyAds();
       } catch (err) {
-        alert("Erro ao salvar: " + err.message);
+        alert("Erro ao salvar anúncio: " + err.message);
       } finally {
-        btnPublish.disabled = false; btnPublish.textContent = "Publicar Anúncio";
+        btnPublish.disabled = false; 
+        btnPublish.textContent = "Publicar Anúncio";
       }
     });
 
-    // ESCUTAR ANÚNCIOS DO FIRESTORE EM TEMPO REAL
     const offersQuery = query(collection(db, "offers"), orderBy("createdAt", "desc"));
     onSnapshot(offersQuery, (snapshot) => {
       allOffers = [];
@@ -842,7 +859,6 @@
           `;
         }
 
-        // WhatsApp Link Sanitize
         const phoneClean = (offer.userPhone || '').replace(/\D/g, '');
         const waBtn = phoneClean ? 
           `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
@@ -876,7 +892,6 @@
       }).join('');
     }
 
-    // EXPANDE/RECOLHE DESCRIÇÃO
     window.toggleDesc = function(id) {
       const descEl = document.getElementById(`desc-${id}`);
       const btn = descEl.nextElementSibling;
@@ -889,7 +904,6 @@
       }
     };
 
-    // GALERIA MODAL
     window.openGallery = function(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
@@ -920,7 +934,6 @@
       galleryViewer.style.display = 'none';
     });
 
-    // MEUS ANÚNCIOS (EDITAR / DELETAR)
     function renderMyAds() {
       const user = auth.currentUser;
       if (!user) return;
@@ -971,7 +984,6 @@
       }
     };
 
-    // BUSCA E FILTROS
     btnSearch.addEventListener('click', filterOffers);
     searchInput.addEventListener('input', filterOffers);
     categoryFilter.addEventListener('change', filterOffers);
@@ -997,7 +1009,6 @@
       return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
     }
 
-    // FORMULÁRIOS DE AUTH
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
