@@ -131,7 +131,12 @@
 
     .btn-gradient { background: var(--bg-gradient); color: #fff; }
     .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-    .btn-whatsapp { background: var(--whatsapp-green); color: #fff; font-weight: bold; }
+    .btn-whatsapp { 
+      background: var(--whatsapp-green); 
+      color: #fff; 
+      font-weight: bold; 
+      white-space: nowrap;
+    }
 
     .hero {
       background: var(--bg-gradient);
@@ -245,7 +250,6 @@
       white-space: pre-wrap;
     }
 
-    /* Limitação de 3 linhas */
     .card-desc-text.collapsed {
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -262,7 +266,7 @@
       font-weight: bold;
       margin-top: 0.3rem; 
       padding: 0;
-      display: none; /* Exibido via JS se exceder 3 linhas */
+      display: none;
     }
 
     .card-wants {
@@ -275,9 +279,14 @@
     }
 
     .card-footer {
-      display: flex; justify-content: space-between; align-items: center;
-      padding-top: 0.8rem; border-top: 1px solid var(--border-color);
-      font-size: 0.85rem; gap: 0.5rem;
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding-top: 0.8rem; 
+      border-top: 1px solid var(--border-color);
+      font-size: 0.85rem; 
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .user-info { display: flex; flex-direction: column; }
@@ -700,12 +709,16 @@
       authModal.style.display = 'none';
     });
 
+    // Mantido para obter atualizações em tempo real de contatos se houver permissão
     onSnapshot(collection(db, "users"), (snapshot) => {
       usersMap = {};
       snapshot.forEach(docSnap => {
         usersMap[docSnap.id] = docSnap.data();
       });
       renderOffers(allOffers);
+    }, (error) => {
+      // Ignora erro de permissão para visitantes não autenticados
+      console.log("Aviso: Mapeamento de usuários restrito.");
     });
 
     onAuthStateChanged(auth, (user) => {
@@ -844,12 +857,13 @@
 
         const userName = currentUserData?.name || user.displayName || "Usuário";
         const userCity = currentUserData?.city || "Brasil";
+        const userPhone = currentUserData?.phone || ""; // Atrela o WhatsApp diretamente ao anúncio
 
         if (adId) {
           const existingOffer = allOffers.find(o => o.id === adId);
           const updateData = {
             title, type, category, wants, description,
-            userName, userCity
+            userName, userCity, userPhone
           };
           if (images.length > 0) {
             updateData.images = images;
@@ -862,7 +876,7 @@
         } else {
           await addDoc(collection(db, "offers"), {
             userId: user.uid,
-            userName, userCity,
+            userName, userCity, userPhone,
             title, type, category, wants, description,
             images: images,
             createdAt: new Date().toISOString()
@@ -924,11 +938,12 @@
         }
 
         const authorProfile = usersMap[offer.userId];
+        // Busca do mapa ou usa o salvo diretamente na oferta (público)
         const currentPhone = authorProfile?.phone || offer.userPhone || '';
         const phoneClean = currentPhone.replace(/\D/g, '');
 
         const waBtn = phoneClean ? 
-          `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
+          `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
           `<span style="font-size:0.75rem; color:var(--text-muted);">Sem WhatsApp</span>`;
 
         return `
@@ -958,7 +973,6 @@
         `;
       }).join('');
 
-      // Evento da galeria de fotos
       document.querySelectorAll('.card-gallery-preview[data-offer-id]').forEach(el => {
         el.addEventListener('click', () => {
           const id = el.getAttribute('data-offer-id');
@@ -966,7 +980,6 @@
         });
       });
 
-      // Checa se cada descrição ultrapassa 3 linhas para exibir o botão "Ler mais"
       setTimeout(() => {
         offers.forEach(offer => {
           const descEl = document.getElementById(`desc-${offer.id}`);
@@ -1127,7 +1140,7 @@
       try {
         const userCred = await createUserWithEmailAndPassword(auth, regEmail, document.getElementById('regPassword').value);
         await updateProfile(userCred.user, { displayName: formattedName });
-        await setDoc(doc(db, "users", userCred.user.uid), {
+        await setDoc(doc(doc(db, "users", userCred.user.uid)), {
           uid: userCred.user.uid, name: formattedName, email: regEmail,
           city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
           createdAt: new Date().toISOString()
@@ -1139,7 +1152,7 @@
     document.getElementById('btnGoogleAuth').addEventListener('click', () => signInWithRedirect(auth, new GoogleAuthProvider()));
     
     document.getElementById('linkToRegister').addEventListener('click', (e) => { e.preventDefault(); showModalTab('register'); });
-    document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('linkToLogin'); showModalTab('login'); });
+    document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('login'); });
     document.getElementById('btnEnableEdit').addEventListener('click', () => {
       document.getElementById('profileView').style.display = 'none';
       document.getElementById('formProfile').style.display = 'block';
