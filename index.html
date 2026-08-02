@@ -709,7 +709,6 @@
       authModal.style.display = 'none';
     });
 
-    // Mantido para obter atualizações em tempo real de contatos se houver permissão
     onSnapshot(collection(db, "users"), (snapshot) => {
       usersMap = {};
       snapshot.forEach(docSnap => {
@@ -717,8 +716,7 @@
       });
       renderOffers(allOffers);
     }, (error) => {
-      // Ignora erro de permissão para visitantes não autenticados
-      console.log("Aviso: Mapeamento de usuários restrito.");
+      // Falha silenciosa para deslogados
     });
 
     onAuthStateChanged(auth, (user) => {
@@ -857,7 +855,7 @@
 
         const userName = currentUserData?.name || user.displayName || "Usuário";
         const userCity = currentUserData?.city || "Brasil";
-        const userPhone = currentUserData?.phone || ""; // Atrela o WhatsApp diretamente ao anúncio
+        const userPhone = currentUserData?.phone || ""; // Atrelado para leitura de convidados
 
         if (adId) {
           const existingOffer = allOffers.find(o => o.id === adId);
@@ -938,7 +936,7 @@
         }
 
         const authorProfile = usersMap[offer.userId];
-        // Busca do mapa ou usa o salvo diretamente na oferta (público)
+        // Funciona tanto logado (busca no perfil atualizado) quanto deslogado (pega do próprio card)
         const currentPhone = authorProfile?.phone || offer.userPhone || '';
         const phoneClean = currentPhone.replace(/\D/g, '');
 
@@ -1140,7 +1138,7 @@
       try {
         const userCred = await createUserWithEmailAndPassword(auth, regEmail, document.getElementById('regPassword').value);
         await updateProfile(userCred.user, { displayName: formattedName });
-        await setDoc(doc(doc(db, "users", userCred.user.uid)), {
+        await setDoc(doc(db, "users", userCred.user.uid), {
           uid: userCred.user.uid, name: formattedName, email: regEmail,
           city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
           createdAt: new Date().toISOString()
