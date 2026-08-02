@@ -182,7 +182,7 @@
       z-index: 10;
     }
 
-    .search-input, .category-select, .form-input {
+    .search-input, .category-select, .form-input, .form-textarea {
       flex: 1;
       min-width: 180px;
       padding: 0.8rem;
@@ -193,12 +193,17 @@
       outline: none;
     }
 
-    .form-input {
+    .form-input, .form-textarea {
       width: 100%;
       margin-bottom: 1rem;
     }
 
-    .form-input:focus {
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-input:focus, .form-textarea:focus {
       border-color: var(--primary-blue);
     }
 
@@ -220,7 +225,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
     }
 
@@ -237,6 +242,13 @@
     .card:hover {
       transform: translateY(-4px);
       border-color: var(--primary-blue);
+    }
+
+    .card-img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: var(--dark-bg);
     }
 
     .card-body {
@@ -257,17 +269,29 @@
     }
 
     .badge-servico { background: rgba(255, 51, 85, 0.2); color: var(--primary-red); }
+    .badge-produto { background: rgba(0, 136, 255, 0.2); color: var(--primary-blue); }
 
     .card-title {
       font-size: 1.1rem;
       margin-bottom: 0.5rem;
     }
 
-    .card-wants {
+    .card-desc {
       font-size: 0.85rem;
       color: var(--text-muted);
+      margin-bottom: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .card-wants {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px dashed var(--border-color);
       margin-bottom: 1rem;
-      flex: 1;
+      margin-top: auto;
     }
 
     .card-footer {
@@ -277,6 +301,16 @@
       padding-top: 0.8rem;
       border-top: 1px solid var(--border-color);
       font-size: 0.85rem;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-location {
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     .modal-overlay {
@@ -296,7 +330,7 @@
       border: 1px solid var(--border-color);
       border-radius: 16px;
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       padding: 2rem;
       position: relative;
       box-shadow: 0 20px 40px rgba(0,0,0,0.8);
@@ -444,22 +478,11 @@
     </div>
 
     <div class="grid" id="offersGrid">
-      <div class="card">
-        <div class="card-body">
-          <span class="card-badge badge-servico">Serviço</span>
-          <h3 class="card-title">Instalação Elétrica Residencial</h3>
-          <p class="card-wants">🔄 <strong>Procura:</strong> Aulas de Inglês ou Manutenção de PC</p>
-          <div class="card-footer">
-            <div class="user-info">
-              <span>👤 João Silva (★ 4.9)</span>
-            </div>
-            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Propor Troca</button>
-          </div>
-        </div>
-      </div>
+      <p style="color: var(--text-muted); grid-column: 1 / -1;">Carregando anúncios...</p>
     </div>
   </main>
 
+  <!-- MODAL DE AUTENTICAÇÃO / PERFIL -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseModal">&times;</button>
@@ -557,6 +580,54 @@
     </div>
   </div>
 
+  <!-- MODAL DE NOVO ANÚNCIO -->
+  <div id="newAdModal" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" id="btnCloseAdModal">&times;</button>
+      <h2 class="modal-title">Novo Anúncio de Troca</h2>
+      
+      <form id="formNewAd">
+        <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">O que você oferece?</label>
+        <input type="text" id="adTitle" class="form-input" placeholder="Ex: Bicicleta Aro 29 / Aulas de Violão" required />
+
+        <div style="display: flex; gap: 0.8rem;">
+          <div style="flex: 1;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Tipo</label>
+            <select id="adType" class="category-select form-input" required>
+              <option value="produto">Produto</option>
+              <option value="servico">Serviço</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Categoria</label>
+            <select id="adCategory" class="category-select form-input" required>
+              <option value="tecnologia">Tecnologia</option>
+              <option value="construcao">Construção</option>
+              <option value="aulas">Aulas</option>
+              <option value="beleza">Beleza</option>
+              <option value="automoveis">Automóveis</option>
+              <option value="roupas">Roupas</option>
+              <option value="esportes">Esportes</option>
+            </select>
+          </div>
+        </div>
+
+        <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">O que você aceita em troca?</label>
+        <input type="text" id="adWants" class="form-input" placeholder="Ex: Celular, Serviços elétricos, Ferramentas" required />
+
+        <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Descrição detalhada</label>
+        <textarea id="adDescription" class="form-textarea" placeholder="Descreva o estado do produto ou como funciona seu serviço..." required></textarea>
+
+        <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Foto do Item (Arquivo de Imagem)</label>
+        <input type="file" id="adImageFile" class="form-input" accept="image/*" />
+
+        <button type="submit" id="btnPublishAd" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+          Publicar Anúncio
+        </button>
+      </form>
+    </div>
+  </div>
+
   <footer>
     <p>&copy; 2026 Trocaê — Conectando necessidades através do escambo inteligente.</p>
   </footer>
@@ -580,6 +651,10 @@
       doc, 
       setDoc, 
       getDoc,
+      addDoc,
+      collection,
+      query,
+      orderBy,
       onSnapshot 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -597,8 +672,9 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Variável global para gerenciar o escutador em tempo real do Firestore
     let unsubscribeProfile = null;
+    let currentUserData = null;
+    let allOffers = [];
 
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
@@ -607,13 +683,18 @@
     ];
 
     function containsForbiddenWords(text) {
+      if (!text) return false;
       const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       return FORBIDDEN_WORDS.some(word => normalized.includes(word));
     }
 
+    // ELEMENTOS DOM
     const authModal = document.getElementById('authModal');
+    const newAdModal = document.getElementById('newAdModal');
     const btnAuthModal = document.getElementById('btnAuthModal');
+    const btnNewAd = document.getElementById('btnNewAd');
     const btnCloseModal = document.getElementById('btnCloseModal');
+    const btnCloseAdModal = document.getElementById('btnCloseAdModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
     
     const loginFormContainer = document.getElementById('loginFormContainer');
@@ -628,6 +709,12 @@
     const linkToRegister = document.getElementById('linkToRegister');
     const linkToLogin = document.getElementById('linkToLogin');
     const authElements = document.querySelectorAll('.auth-only');
+
+    const offersGrid = document.getElementById('offersGrid');
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const btnSearch = document.getElementById('btnSearch');
 
     function showModalTab(tab) {
       loginFormContainer.style.display = 'none';
@@ -663,6 +750,16 @@
       e.preventDefault();
       showProfileMode('view');
     });
+
+    btnNewAd.addEventListener('click', () => {
+      if (!auth.currentUser) {
+        showModalTab('login');
+        return;
+      }
+      newAdModal.style.display = 'flex';
+    });
+
+    btnCloseAdModal.addEventListener('click', () => newAdModal.style.display = 'none');
 
     getRedirectResult(auth)
       .then(async (result) => {
@@ -709,6 +806,7 @@
 
     function resetProfileUI() {
       btnAuthModal.textContent = "Entrar / Cadastrar";
+      currentUserData = null;
       document.getElementById('viewName').textContent = '-';
       document.getElementById('viewEmail').textContent = '-';
       document.getElementById('viewPhone').textContent = '-';
@@ -739,25 +837,25 @@
       if (user) {
         authElements.forEach(el => el.style.display = 'inline-flex');
         
-        // Escuta alterações do documento em tempo real no Firestore
         const userRef = doc(db, "users", user.uid);
         unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
           if (snapshot.exists()) {
-            const data = snapshot.data();
+            currentUserData = snapshot.data();
             renderProfileData({
-              name: data.name || user.displayName || 'Usuário',
-              email: data.email || user.email || '',
-              phone: data.phone || '',
-              city: data.city || ''
+              name: currentUserData.name || user.displayName || 'Usuário',
+              email: currentUserData.email || user.email || '',
+              phone: currentUserData.phone || '',
+              city: currentUserData.city || ''
             });
           } else {
-            // Cria o documento no Firestore se ele não existir
             setDoc(userRef, {
               uid: user.uid,
               name: user.displayName || "Usuário",
               email: user.email || "",
               phone: "",
               city: "",
+              rating: 5.0,
+              tradesCount: 0,
               createdAt: new Date().toISOString()
             }, { merge: true });
 
@@ -802,6 +900,193 @@
       document.getElementById('profCity').value = city;
     }
 
+    // CRIAÇÃO DE ANÚNCIO (OFFERS)
+    document.getElementById('formNewAd').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Você precisa estar logado para publicar.");
+        return;
+      }
+
+      const title = document.getElementById('adTitle').value.trim();
+      const type = document.getElementById('adType').value;
+      const category = document.getElementById('adCategory').value;
+      const wants = document.getElementById('adWants').value.trim();
+      const description = document.getElementById('adDescription').value.trim();
+      const fileInput = document.getElementById('adImageFile');
+
+      if (containsForbiddenWords(title) || containsForbiddenWords(wants) || containsForbiddenWords(description)) {
+        alert("Sua publicação contém termos não permitidos. Por favor, revise seu texto.");
+        return;
+      }
+
+      const btnPublish = document.getElementById('btnPublishAd');
+      btnPublish.disabled = true;
+      btnPublish.textContent = "Publicando...";
+
+      try {
+        let imageUrl = "";
+
+        // Processa foto caso enviada (converte para Base64 comprimida)
+        if (fileInput.files && fileInput.files[0]) {
+          imageUrl = await processImageFile(fileInput.files[0]);
+        }
+
+        const userName = currentUserData?.name || user.displayName || "Usuário Trocaê";
+        const userCity = currentUserData?.city || "Brasil";
+
+        await addDoc(collection(db, "offers"), {
+          userId: user.uid,
+          userName: userName,
+          userCity: userCity,
+          title: title,
+          type: type,
+          category: category,
+          wants: wants,
+          description: description,
+          imageUrl: imageUrl,
+          createdAt: new Date().toISOString()
+        });
+
+        alert("Anúncio publicado com sucesso!");
+        document.getElementById('formNewAd').reset();
+        newAdModal.style.display = 'none';
+
+      } catch (err) {
+        console.error("Erro ao criar anúncio:", err);
+        alert("Erro ao publicar anúncio: " + err.message);
+      } finally {
+        btnPublish.disabled = false;
+        btnPublish.textContent = "Publicar Anúncio";
+      }
+    });
+
+    // Função auxiliar para converter imagem enviada no celular/PC em string Base64 leve
+    function processImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 600;
+
+            if (width > height) {
+              if (width > maxDim) {
+                height *= maxDim / width;
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width *= maxDim / height;
+                height = maxDim;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ESCUTAR ANÚNCIOS EM TEMPO REAL
+    const offersQuery = query(collection(db, "offers"), orderBy("createdAt", "desc"));
+    onSnapshot(offersQuery, (snapshot) => {
+      allOffers = [];
+      snapshot.forEach((doc) => {
+        allOffers.push({ id: doc.id, ...doc.data() });
+      });
+      renderOffers(allOffers);
+    }, (err) => {
+      console.error("Erro ao buscar ofertas:", err);
+      offersGrid.innerHTML = `<p style="color: var(--primary-red); grid-column: 1 / -1;">Erro ao carregar ofertas.</p>`;
+    });
+
+    function renderOffers(offers) {
+      if (offers.length === 0) {
+        offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado. Seja o primeiro a publicar!</p>`;
+        return;
+      }
+
+      offersGrid.innerHTML = offers.map(offer => {
+        const badgeClass = offer.type === 'servico' ? 'badge-servico' : 'badge-produto';
+        const typeText = offer.type === 'servico' ? 'Serviço' : 'Produto';
+        const imgTag = offer.imageUrl ? `<img src="${offer.imageUrl}" class="card-img" alt="${offer.title}" />` : '';
+
+        return `
+          <div class="card">
+            ${imgTag}
+            <div class="card-body">
+              <span class="card-badge ${badgeClass}">${typeText}</span>
+              <h3 class="card-title">${escapeHtml(offer.title)}</h3>
+              <p class="card-desc">${escapeHtml(offer.description)}</p>
+              <div class="card-wants">
+                🔄 <strong>Procura:</strong> ${escapeHtml(offer.wants)}
+              </div>
+              <div class="card-footer">
+                <div class="user-info">
+                  <span>👤 ${escapeHtml(offer.userName)}</span>
+                  <span class="user-location">📍 ${escapeHtml(offer.userCity)}</span>
+                </div>
+                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Propor Troca</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[m];
+      });
+    }
+
+    // FILTROS E BUSCA
+    btnSearch.addEventListener('click', filterOffers);
+    searchInput.addEventListener('input', filterOffers);
+    categoryFilter.addEventListener('change', filterOffers);
+    typeFilter.addEventListener('change', filterOffers);
+
+    function filterOffers() {
+      const queryText = searchInput.value.toLowerCase().trim();
+      const categoryVal = categoryFilter.value;
+      const typeVal = typeFilter.value;
+
+      const filtered = allOffers.filter(offer => {
+        const matchQuery = !queryText || 
+          offer.title.toLowerCase().includes(queryText) || 
+          offer.description.toLowerCase().includes(queryText) ||
+          offer.wants.toLowerCase().includes(queryText);
+
+        const matchCategory = !categoryVal || offer.category === categoryVal;
+        const matchType = !typeVal || offer.type === typeVal;
+
+        return matchQuery && matchCategory && matchType;
+      });
+
+      renderOffers(filtered);
+    }
+
+    // AUTENTICAÇÃO FORMULÁRIOS
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
