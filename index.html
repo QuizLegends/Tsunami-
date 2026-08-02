@@ -234,18 +234,35 @@
 
     .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
 
-    .description-container { margin-bottom: 0.8rem; }
+    .description-container { 
+      margin-bottom: 0.8rem;
+      word-break: break-word;
+    }
     .card-desc-text {
-      font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;
+      font-size: 0.88rem; 
+      color: var(--text-muted); 
+      line-height: 1.4;
+      white-space: pre-wrap;
     }
+
+    /* Limitação de 3 linhas */
     .card-desc-text.collapsed {
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
+
     .btn-toggle-desc {
-      background: none; border: none; color: var(--primary-blue);
-      font-size: 0.8rem; cursor: pointer; font-weight: bold;
-      margin-top: 0.3rem; padding: 0;
+      background: none; 
+      border: none; 
+      color: var(--primary-blue);
+      font-size: 0.8rem; 
+      cursor: pointer; 
+      font-weight: bold;
+      margin-top: 0.3rem; 
+      padding: 0;
+      display: none; /* Exibido via JS se exceder 3 linhas */
     }
 
     .card-wants {
@@ -254,6 +271,7 @@
       padding: 0.6rem; border-radius: 6px;
       border: 1px dashed var(--border-color);
       margin-bottom: 1rem; margin-top: auto;
+      word-break: break-word;
     }
 
     .card-footer {
@@ -545,7 +563,7 @@
     </div>
   </div>
 
-  <!-- VISUALIZADOR DE GALERIA (ZOOM / SLIDE) -->
+  <!-- VISUALIZADOR DE GALERIA -->
   <div id="galleryViewer" class="gallery-viewer-modal">
     <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem;">&times;</button>
     <div class="gallery-img-container">
@@ -589,7 +607,7 @@
     let unsubscribeProfile = null;
     let currentUserData = null;
     let allOffers = [];
-    let usersMap = {}; // Guarda dados dos usuários em tempo real
+    let usersMap = {};
 
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
@@ -682,7 +700,6 @@
       authModal.style.display = 'none';
     });
 
-    // ESCUTAR LISTA DE USUÁRIOS
     onSnapshot(collection(db, "users"), (snapshot) => {
       usersMap = {};
       snapshot.forEach(docSnap => {
@@ -725,7 +742,6 @@
       document.getElementById('profCity').value = data.city || '';
     }
 
-    // SALVAR ALTERAÇÕES DO PERFIL (COM EDIÇÃO DE E-MAIL E ATUALIZAÇÃO DO WHATSAPP)
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -765,7 +781,6 @@
       }
     });
 
-    // COMPRESSOR DE IMAGENS
     function processImageFile(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -799,7 +814,6 @@
       return results.filter(res => res !== null);
     }
 
-    // SALVAR / EDITAR ANÚNCIO
     document.getElementById('formNewAd').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
@@ -874,7 +888,6 @@
       renderMyAds();
     });
 
-    // RENDERIZAR ANÚNCIOS (DADOS EM TEMPO REAL)
     function renderOffers(offers) {
       if (offers.length === 0) {
         offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>`;
@@ -910,7 +923,6 @@
           `;
         }
 
-        // Pega o WhatsApp atual do criador através do mapa do Firestore
         const authorProfile = usersMap[offer.userId];
         const currentPhone = authorProfile?.phone || offer.userPhone || '';
         const phoneClean = currentPhone.replace(/\D/g, '');
@@ -928,7 +940,7 @@
               
               <div class="description-container">
                 <p class="card-desc-text collapsed" id="desc-${offer.id}">${escapeHtml(offer.description)}</p>
-                <button class="btn-toggle-desc" onclick="toggleDesc('${offer.id}')">Ler mais</button>
+                <button class="btn-toggle-desc" id="btn-desc-${offer.id}" onclick="toggleDesc('${offer.id}')">Ler mais</button>
               </div>
 
               <div class="card-wants">
@@ -946,18 +958,31 @@
         `;
       }).join('');
 
-      // Adiciona manipulador de evento diretamente nos elementos da galeria
+      // Evento da galeria de fotos
       document.querySelectorAll('.card-gallery-preview[data-offer-id]').forEach(el => {
         el.addEventListener('click', () => {
           const id = el.getAttribute('data-offer-id');
           openGallery(id, 0);
         });
       });
+
+      // Checa se cada descrição ultrapassa 3 linhas para exibir o botão "Ler mais"
+      setTimeout(() => {
+        offers.forEach(offer => {
+          const descEl = document.getElementById(`desc-${offer.id}`);
+          const btnEl = document.getElementById(`btn-desc-${offer.id}`);
+          if (descEl && btnEl) {
+            if (descEl.scrollHeight > descEl.clientHeight) {
+              btnEl.style.display = 'inline-block';
+            }
+          }
+        });
+      }, 50);
     }
 
     window.toggleDesc = function(id) {
       const descEl = document.getElementById(`desc-${id}`);
-      const btn = descEl.nextElementSibling;
+      const btn = document.getElementById(`btn-desc-${id}`);
       if (descEl.classList.contains('collapsed')) {
         descEl.classList.remove('collapsed');
         btn.textContent = 'Recolher';
@@ -1114,7 +1139,7 @@
     document.getElementById('btnGoogleAuth').addEventListener('click', () => signInWithRedirect(auth, new GoogleAuthProvider()));
     
     document.getElementById('linkToRegister').addEventListener('click', (e) => { e.preventDefault(); showModalTab('register'); });
-    document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('login'); });
+    document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('linkToLogin'); showModalTab('login'); });
     document.getElementById('btnEnableEdit').addEventListener('click', () => {
       document.getElementById('profileView').style.display = 'none';
       document.getElementById('formProfile').style.display = 'block';
