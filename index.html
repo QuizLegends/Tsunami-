@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trocaê | Plataforma de Escambo 100% Direto</title>
-  
+
   <style>
     :root {
       --primary-blue: #0088ff;
@@ -131,10 +131,16 @@
 
     .btn-gradient { background: var(--bg-gradient); color: #fff; }
     .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-    .btn-whatsapp { 
-      background: var(--whatsapp-green); 
-      color: #fff; 
-      font-weight: bold; 
+    .btn-whatsapp {
+      background: var(--whatsapp-green);
+      color: #fff;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .btn-chat-direct {
+      background: var(--primary-blue);
+      color: #fff;
+      font-weight: bold;
       white-space: nowrap;
     }
 
@@ -239,13 +245,13 @@
 
     .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
 
-    .description-container { 
+    .description-container {
       margin-bottom: 0.8rem;
       word-break: break-word;
     }
     .card-desc-text {
-      font-size: 0.88rem; 
-      color: var(--text-muted); 
+      font-size: 0.88rem;
+      color: var(--text-muted);
       line-height: 1.4;
       white-space: pre-wrap;
     }
@@ -258,13 +264,13 @@
     }
 
     .btn-toggle-desc {
-      background: none; 
-      border: none; 
+      background: none;
+      border: none;
       color: var(--primary-blue);
-      font-size: 0.8rem; 
-      cursor: pointer; 
+      font-size: 0.8rem;
+      cursor: pointer;
       font-weight: bold;
-      margin-top: 0.3rem; 
+      margin-top: 0.3rem;
       padding: 0;
       display: none;
     }
@@ -279,12 +285,12 @@
     }
 
     .card-footer {
-      display: flex; 
-      justify-content: space-between; 
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      padding-top: 0.8rem; 
+      padding-top: 0.8rem;
       border-top: 1px solid var(--border-color);
-      font-size: 0.85rem; 
+      font-size: 0.85rem;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
@@ -363,6 +369,44 @@
     }
 
     .auth-only { display: none; }
+
+    /* ESTILOS DO CHAT FLUTUANTE E LISTA DE CONVERSAS */
+    .chat-modal-window {
+      display: none; position: fixed; bottom: 20px; right: 20px;
+      width: 340px; height: 460px; background: var(--dark-card);
+      border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+      flex-direction: column; z-index: 2500; overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+    .chat-header-bar {
+      background: rgba(255,255,255,0.05); padding: 12px 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .chat-messages-area {
+      flex: 1; padding: 12px; overflow-y: auto; display: flex;
+      flex-direction: column; gap: 8px; background: var(--dark-bg);
+    }
+    .chat-msg-bubble {
+      max-width: 80%; padding: 8px 12px; border-radius: 12px;
+      font-size: 13px; line-height: 1.4; word-break: break-word;
+    }
+    .chat-msg-bubble.me {
+      align-self: flex-end; background: var(--primary-blue); color: #fff; border-bottom-right-radius: 2px;
+    }
+    .chat-msg-bubble.them {
+      align-self: flex-start; background: #1e293b; color: var(--text-main); border: 1px solid var(--border-color); border-bottom-left-radius: 2px;
+    }
+    .chat-input-bar { display: flex; padding: 10px; border-top: 1px solid var(--border-color); background: var(--dark-card); gap: 8px; }
+    .chat-input-bar input { flex: 1; padding: 8px 12px; background: var(--dark-bg); border: 1px solid var(--border-color); border-radius: 20px; color: #fff; outline: none; }
+    .chat-input-bar button { border-radius: 20px; padding: 8px 14px; background: var(--bg-gradient); color: #fff; border: none; cursor: pointer; font-weight: bold; }
+
+    .chat-item-card {
+      padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;
+      background: var(--dark-bg); margin-bottom: 8px; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .chat-item-card:hover { border-color: var(--primary-blue); }
   </style>
 </head>
 <body>
@@ -419,746 +463,671 @@
     </div>
   </main>
 
-  <!-- MODAL PERFIL / MEUS ANÚNCIOS -->
-  <div id="authModal" class="modal-overlay">
+  <footer>
+    <p>&copy; 2026 Trocaê - Conectando pessoas através do escambo. Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- MODAL DE LOGIN / CADASTRO -->
+  <div class="modal-overlay" id="authModal">
     <div class="modal-card">
-      <button class="modal-close" id="btnCloseModal">&times;</button>
-      
-      <!-- LOGIN -->
-      <div id="loginFormContainer">
-        <h2 class="modal-title">Entrar no Trocaê</h2>
-        <form id="formLogin">
-          <input type="email" id="loginEmail" class="form-input" placeholder="E-mail" required />
-          <input type="password" id="loginPassword" class="form-input" placeholder="Senha" required />
-          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;">Entrar</button>
-        </form>
-        
-        <div style="margin: 1rem 0; text-align: center; color: var(--text-muted);">ou</div>
-        <button id="btnGoogleAuth" class="btn btn-outline" style="width: 100%; justify-content: center;">
-          Continuar com Google
+      <button class="modal-close" id="btnCloseAuthModal">&times;</button>
+      <div class="profile-tabs">
+        <button class="tab-btn active" id="tabLogin">Entrar</button>
+        <button class="tab-btn" id="tabRegister">Cadastrar</button>
+      </div>
+
+      <form id="authForm">
+        <div id="registerFields" style="display: none;">
+          <input type="text" id="authName" class="form-input" placeholder="Nome completo" />
+          <input type="tel" id="authPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" />
+          <input type="text" id="authCity" class="form-input" placeholder="Cidade / Estado" />
+        </div>
+        <input type="email" id="authEmail" class="form-input" placeholder="E-mail" required />
+        <input type="password" id="authPassword" class="form-input" placeholder="Senha" required />
+
+        <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 1rem;" id="btnAuthSubmit">
+          Entrar
         </button>
-
-        <p class="modal-toggle" style="text-align: center; margin-top: 1rem;">
-          Não tem conta? <a href="#" id="linkToRegister" style="color: var(--primary-blue);">Cadastre-se</a>
-        </p>
-      </div>
-
-      <!-- CADASTRO -->
-      <div id="registerFormContainer" style="display: none;">
-        <h2 class="modal-title">Criar Conta no Trocaê</h2>
-        <form id="formRegister">
-          <input type="text" id="regName" class="form-input" placeholder="Nome e Sobrenome" required />
-          <input type="email" id="regEmail" class="form-input" placeholder="E-mail" required />
-          <input type="password" id="regPassword" class="form-input" placeholder="Senha (min. 6 caracteres)" required />
-          <input type="text" id="regCity" class="form-input" placeholder="Sua Cidade (Ex: Jaboatão, Recife)" required />
-          <input type="tel" id="regPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
-          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;">Criar Conta</button>
-        </form>
-
-        <p class="modal-toggle" style="text-align: center; margin-top: 1rem;">
-          Já tem conta? <a href="#" id="linkToLogin" style="color: var(--primary-blue);">Fazer Login</a>
-        </p>
-      </div>
-
-      <!-- MEU PERFIL E MEUS ANÚNCIOS -->
-      <div id="profileFormContainer" style="display: none;">
-        
-        <div class="profile-tabs">
-          <button class="tab-btn active" id="tabInfoBtn">Minha Conta</button>
-          <button class="tab-btn" id="tabAdsBtn">Meus Anúncios</button>
-        </div>
-
-        <div id="tabInfoContent">
-          <div id="profileView">
-            <div style="background: var(--dark-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.2rem;">
-              <div style="margin-bottom: 0.8rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Nome</div>
-                <div id="viewName" style="font-weight: 500;">Carregando...</div>
-              </div>
-              <div style="margin-bottom: 0.8rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">E-mail</div>
-                <div id="viewEmail" style="font-weight: 500;">Carregando...</div>
-              </div>
-              <div style="margin-bottom: 0.8rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">WhatsApp</div>
-                <div id="viewPhone" style="font-weight: 500;">Carregando...</div>
-              </div>
-              <div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Cidade / Endereço</div>
-                <div id="viewCity" style="font-weight: 500;">Carregando...</div>
-              </div>
-            </div>
-
-            <button id="btnEnableEdit" type="button" class="btn btn-outline" style="width: 100%; justify-content: center;">✏️ Editar Perfil</button>
-          </div>
-
-          <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL -->
-          <form id="formProfile" style="display: none;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Nome e Sobrenome</label>
-            <input type="text" id="profName" class="form-input" required />
-
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">E-mail</label>
-            <input type="email" id="profEmail" class="form-input" required />
-
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">WhatsApp</label>
-            <input type="tel" id="profPhone" class="form-input" required />
-
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Cidade</label>
-            <input type="text" id="profCity" class="form-input" required />
-
-            <button type="submit" id="btnSaveProfile" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Salvar Alterações</button>
-            <button type="button" id="btnCancelEdit" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Cancelar</button>
-          </form>
-
-          <button id="btnLogoutModal" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 1.5rem; border-color: var(--primary-red); color: var(--primary-red);">Sair da Conta</button>
-        </div>
-
-        <div id="tabAdsContent" style="display: none;">
-          <div id="myAdsList">
-            <p style="color: var(--text-muted);">Carregando seus anúncios...</p>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MODAL DE ANÚNCIO (CRIAR / EDITAR) -->
-  <div id="newAdModal" class="modal-overlay">
-    <div class="modal-card">
-      <button class="modal-close" id="btnCloseAdModal">&times;</button>
-      <h2 class="modal-title" id="adModalTitle">Novo Anúncio de Troca</h2>
-      
-      <form id="formNewAd">
-        <input type="hidden" id="editingAdId" value="" />
-
-        <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">O que você oferece?</label>
-        <input type="text" id="adTitle" class="form-input" placeholder="Ex: Bicicleta Aro 29" required />
-
-        <div style="display: flex; gap: 0.8rem;">
-          <div style="flex: 1;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Tipo</label>
-            <select id="adType" class="category-select form-input" required>
-              <option value="produto">Produto</option>
-              <option value="servico">Serviço</option>
-            </select>
-          </div>
-          <div style="flex: 1;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Categoria</label>
-            <select id="adCategory" class="category-select form-input" required>
-              <option value="tecnologia">Tecnologia</option>
-              <option value="construcao">Construção</option>
-              <option value="aulas">Aulas</option>
-              <option value="beleza">Beleza</option>
-              <option value="automoveis">Automóveis</option>
-              <option value="roupas">Roupas</option>
-              <option value="esportes">Esportes</option>
-            </select>
-          </div>
-        </div>
-
-        <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">O que você aceita em troca?</label>
-        <input type="text" id="adWants" class="form-input" placeholder="Ex: Celular, Serviços elétricos" required />
-
-        <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Descrição detalhada</label>
-        <textarea id="adDescription" class="form-textarea" placeholder="Descreva os detalhes do item..." required></textarea>
-
-        <label style="font-size: 0.85rem; color: var(--text-muted); display: block;">Fotos do Item (Até 6 fotos)</label>
-        <input type="file" id="adImageFiles" class="form-input" accept="image/*" multiple />
-
-        <button type="submit" id="btnPublishAd" class="btn btn-gradient" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Publicar Anúncio</button>
       </form>
     </div>
   </div>
 
-  <!-- VISUALIZADOR DE GALERIA -->
-  <div id="galleryViewer" class="gallery-viewer-modal">
-    <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem;">&times;</button>
-    <div class="gallery-img-container">
-      <button class="gallery-nav-btn gallery-prev" id="btnPrevImg">&#10094;</button>
-      <img id="galleryFullImg" class="gallery-img-full" src="" alt="Zoom Foto" />
-      <button class="gallery-nav-btn gallery-next" id="btnNextImg">&#10095;</button>
+  <!-- MODAL DE PERFIL E GERENCIAMENTO -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-card">
+      <button class="modal-close" id="btnCloseProfileModal">&times;</button>
+      <div class="profile-tabs">
+        <button class="tab-btn active" id="tabMyProfile">Meu Perfil</button>
+        <button class="tab-btn" id="tabMyAds">Meus Anúncios</button>
+        <button class="tab-btn" id="tabMyChats">Suas Conversas</button>
+      </div>
+
+      <div id="contentMyProfile">
+        <form id="profileForm">
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Nome</label>
+          <input type="text" id="editName" class="form-input" required />
+
+          <label style="font-size: 0.85rem; color: var(--text-muted);">WhatsApp</label>
+          <input type="tel" id="editPhone" class="form-input" required />
+
+          <label style="font-size: 0.85rem; color: var(--text-muted);">Cidade / UF</label>
+          <input type="text" id="editCity" class="form-input" required />
+
+          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;">
+            Salvar Alterações
+          </button>
+        </form>
+        <hr style="border-color: var(--border-color); margin: 1.5rem 0;" />
+        <button class="btn btn-outline" id="btnLogout" style="width: 100%; justify-content: center; color: var(--primary-red);">
+          Sair da Conta
+        </button>
+      </div>
+
+      <div id="contentMyAds" style="display: none;">
+        <div id="myAdsList">
+          <p style="color: var(--text-muted);">Carregando seus anúncios...</p>
+        </div>
+      </div>
+
+      <!-- ABA SUAS CONVERSAS NO PERFIL -->
+      <div id="contentMyChats" style="display: none;">
+        <div id="myChatsList">
+          <p style="color: var(--text-muted);">Carregando conversas...</p>
+        </div>
+      </div>
     </div>
-    <div id="galleryCounter" style="color: #fff; margin-top: 1rem; font-weight: bold;"></div>
   </div>
 
-  <footer>
-    <p>&copy; 2026 Trocaê — Conectando necessidades através do escambo inteligente.</p>
-  </footer>
+  <!-- MODAL DE CRIAR / EDITAR ANÚNCIO -->
+  <div class="modal-overlay" id="adModal">
+    <div class="modal-card">
+      <button class="modal-close" id="btnCloseAdModal">&times;</button>
+      <h3 class="modal-title" id="adModalTitle">Novo Anúncio de Troca</h3>
 
+      <form id="adForm">
+        <input type="hidden" id="adId" />
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">Título do Anúncio</label>
+        <input type="text" id="adTitle" class="form-input" placeholder="Ex: Guitarra Tagima por Notebook" required />
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">Tipo de Oferta</label>
+        <select id="adType" class="form-input" required>
+          <option value="produto">Produto</option>
+          <option value="servico">Serviço</option>
+        </select>
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">Categoria</label>
+        <select id="adCategory" class="form-input" required>
+          <option value="tecnologia">Tecnologia</option>
+          <option value="construcao">Construção & Reformas</option>
+          <option value="aulas">Aulas & Treinamentos</option>
+          <option value="beleza">Beleza & Estética</option>
+          <option value="automoveis">Automóveis</option>
+          <option value="roupas">Roupas & Acessórios</option>
+          <option value="esportes">Esportes & Lazer</option>
+        </select>
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">O que você OFERECE (Descrição)</label>
+        <textarea id="adDescription" class="form-textarea" placeholder="Descreva os detalhes, estado de conservação ou como funciona seu serviço..." required></textarea>
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">O que você PROCURA em troca?</label>
+        <input type="text" id="adWants" class="form-input" placeholder="Ex: Notebook i5, Aulas de Inglês, Pintura de casa..." required />
+
+        <label style="font-size: 0.85rem; color: var(--text-muted);">Imagens (Até 5 fotos - URLs separadas por vírgula)</label>
+        <textarea id="adImages" class="form-textarea" placeholder="https://imagem1.jpg, https://imagem2.jpg"></textarea>
+
+        <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;" id="btnSaveAd">
+          Publicar Anúncio
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR DE GALERIA DE FOTOS -->
+  <div class="gallery-viewer-modal" id="galleryViewer">
+    <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem;">&times;</button>
+    <div class="gallery-img-container">
+      <button class="gallery-nav-btn gallery-prev" id="btnGalleryPrev">&#10094;</button>
+      <img src="" alt="Foto expandida" class="gallery-img-full" id="galleryFullImage" />
+      <button class="gallery-nav-btn gallery-next" id="btnGalleryNext">&#10095;</button>
+    </div>
+    <p style="color: #fff; margin-top: 1rem; font-size: 0.9rem;" id="galleryCounter">1 / 1</p>
+  </div>
+
+  <!-- JANELA DE CHAT FLUTUANTE ATIVA -->
+  <div class="chat-modal-window" id="activeChatWindow">
+    <div class="chat-header-bar">
+      <span id="activeChatTitle" style="font-weight: bold; font-size: 14px;">Chat</span>
+      <button onclick="closeActiveChat()" style="background:none; border:none; color:#fff; cursor:pointer; font-size: 16px;">✕</button>
+    </div>
+    <div class="chat-messages-area" id="activeChatMessages"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="activeChatInput" placeholder="Digite uma mensagem..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()">Enviar</button>
+    </div>
+  </div>
+
+  <!-- FIREBASE V9 MODULE INTEGRADO -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { 
-      getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-      createUserWithEmailAndPassword, signInWithRedirect,
-      updateProfile, updateEmail, GoogleAuthProvider, signOut 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+      signOut, onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { 
-      getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc,
-      collection, query, orderBy, onSnapshot 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+      getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, 
+      deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+    // INSIRA AQUI SUAS CREDENCIAIS DO FIREBASE
     const firebaseConfig = {
-      apiKey: "AIzaSyA-p54xblpgEqdv7eJ-HjN1FvCv12Vz-ZU",
-      authDomain: "trocae-f94e1.firebaseapp.com",
-      databaseURL: "https://trocae-f94e1-default-rtdb.firebaseio.com",
-      projectId: "trocae-f94e1",
-      storageBucket: "trocae-f94e1.firebasestorage.app",
-      messagingSenderId: "727780957751",
-      appId: "1:727780957751:web:0cc36e90d867031b8069b2"
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJECT_ID.firebaseapp.com",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_PROJECT_ID.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let unsubscribeProfile = null;
+    let currentUser = null;
     let currentUserData = null;
-    let allOffers = [];
-    let usersMap = {};
+    let activeChatId = null;
+    let unsubscribeChatMessages = null;
+
+    // --- ELEMENTOS DOM ---
+    const btnAuthModal = document.getElementById('btnAuthModal');
+    const authModal = document.getElementById('authModal');
+    const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const registerFields = document.getElementById('registerFields');
+    const authForm = document.getElementById('authForm');
+    const btnAuthSubmit = document.getElementById('btnAuthSubmit');
+
+    const profileModal = document.getElementById('profileModal');
+    const btnCloseProfileModal = document.getElementById('btnCloseProfileModal');
+    const tabMyProfile = document.getElementById('tabMyProfile');
+    const tabMyAds = document.getElementById('tabMyAds');
+    const tabMyChats = document.getElementById('tabMyChats');
+    const contentMyProfile = document.getElementById('contentMyProfile');
+    const contentMyAds = document.getElementById('contentMyAds');
+    const contentMyChats = document.getElementById('contentMyChats');
+    const profileForm = document.getElementById('profileForm');
+    const btnLogout = document.getElementById('btnLogout');
+
+    const btnNewAd = document.getElementById('btnNewAd');
+    const adModal = document.getElementById('adModal');
+    const btnCloseAdModal = document.getElementById('btnCloseAdModal');
+    const adForm = document.getElementById('adForm');
+
+    const offersGrid = document.getElementById('offersGrid');
+    const myAdsList = document.getElementById('myAdsList');
+    const myChatsList = document.getElementById('myChatsList');
+
+    const galleryViewer = document.getElementById('galleryViewer');
+    const btnCloseGallery = document.getElementById('btnCloseGallery');
+    const galleryFullImage = document.getElementById('galleryFullImage');
+    const btnGalleryPrev = document.getElementById('btnGalleryPrev');
+    const btnGalleryNext = document.getElementById('btnGalleryNext');
+    const galleryCounter = document.getElementById('galleryCounter');
 
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
+    let isRegisterMode = false;
 
-    const FORBIDDEN_WORDS = [
-      "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica", 
-      "pinto", "merda", "cacete", "arrombado", "desgraca", "viado", 
-      "bastardo", "otario", "piranha", "vagabundo", "vagabunda", "corno"
-    ];
-
-    function containsForbiddenWords(text) {
-      if (!text) return false;
-      const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return FORBIDDEN_WORDS.some(word => new RegExp(`\\b${word}\\b`, 'i').test(normalized));
-    }
-
-    const authModal = document.getElementById('authModal');
-    const newAdModal = document.getElementById('newAdModal');
-    const galleryViewer = document.getElementById('galleryViewer');
-    
-    const btnAuthModal = document.getElementById('btnAuthModal');
-    const btnNewAd = document.getElementById('btnNewAd');
-    const btnCloseModal = document.getElementById('btnCloseModal');
-    const btnCloseAdModal = document.getElementById('btnCloseAdModal');
-    const btnLogoutModal = document.getElementById('btnLogoutModal');
-
-    const tabInfoBtn = document.getElementById('tabInfoBtn');
-    const tabAdsBtn = document.getElementById('tabAdsBtn');
-    const tabInfoContent = document.getElementById('tabInfoContent');
-    const tabAdsContent = document.getElementById('tabAdsContent');
-    const myAdsList = document.getElementById('myAdsList');
-
-    const offersGrid = document.getElementById('offersGrid');
-    const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const typeFilter = document.getElementById('typeFilter');
-    const btnSearch = document.getElementById('btnSearch');
-
-    tabInfoBtn.addEventListener('click', () => {
-      tabInfoBtn.classList.add('active');
-      tabAdsBtn.classList.remove('active');
-      tabInfoContent.style.display = 'block';
-      tabAdsContent.style.display = 'none';
-    });
-
-    tabAdsBtn.addEventListener('click', () => {
-      tabAdsBtn.classList.add('active');
-      tabInfoBtn.classList.remove('active');
-      tabInfoContent.style.display = 'none';
-      tabAdsContent.style.display = 'block';
-      renderMyAds();
-    });
-
-    btnNewAd.addEventListener('click', () => {
-      if (!auth.currentUser) {
-        showModalTab('login');
-        return;
-      }
-      document.getElementById('formNewAd').reset();
-      document.getElementById('editingAdId').value = "";
-      document.getElementById('adModalTitle').textContent = "Novo Anúncio de Troca";
-      newAdModal.style.display = 'flex';
-    });
-
-    btnCloseAdModal.addEventListener('click', () => newAdModal.style.display = 'none');
-    btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
-
-    function showModalTab(tab) {
-      document.getElementById('loginFormContainer').style.display = 'none';
-      document.getElementById('registerFormContainer').style.display = 'none';
-      document.getElementById('profileFormContainer').style.display = 'none';
-
-      if (tab === 'login') document.getElementById('loginFormContainer').style.display = 'block';
-      if (tab === 'register') document.getElementById('registerFormContainer').style.display = 'block';
-      if (tab === 'profile') {
-        document.getElementById('profileFormContainer').style.display = 'block';
-        tabInfoBtn.click();
-      }
-      authModal.style.display = 'flex';
-    }
-
-    btnAuthModal.addEventListener('click', () => {
-      if (auth.currentUser) showModalTab('profile');
-      else showModalTab('login');
-    });
-
-    btnLogoutModal.addEventListener('click', async () => {
-      if (unsubscribeProfile) unsubscribeProfile();
-      await signOut(auth);
-      authModal.style.display = 'none';
-    });
-
-    onSnapshot(collection(db, "users"), (snapshot) => {
-      usersMap = {};
-      snapshot.forEach(docSnap => {
-        usersMap[docSnap.id] = docSnap.data();
-      });
-      renderOffers(allOffers);
-    }, (error) => {
-      // Falha silenciosa para deslogados
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      if (unsubscribeProfile) unsubscribeProfile();
-
+    // --- AUTENTICAÇÃO ---
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
+        currentUser = user;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          currentUserData = userDoc.data();
+          btnAuthModal.innerText = currentUserData.name || "Minha Conta";
+        } else {
+          btnAuthModal.innerText = "Minha Conta";
+        }
         document.querySelectorAll('.auth-only').forEach(el => el.style.display = 'inline-flex');
-        const userRef = doc(db, "users", user.uid);
-        unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
-          if (snapshot.exists()) {
-            currentUserData = snapshot.data();
-            renderProfileData(currentUserData);
-          }
-        });
+        loadMyChats();
       } else {
-        btnAuthModal.textContent = "Entrar / Cadastrar";
+        currentUser = null;
         currentUserData = null;
+        btnAuthModal.innerText = "Entrar / Cadastrar";
         document.querySelectorAll('.auth-only').forEach(el => el.style.display = 'none');
       }
+      loadOffers();
     });
 
-    function renderProfileData(data) {
-      const name = data.name || 'Usuário';
-      const email = data.email || auth.currentUser?.email || '-';
-      btnAuthModal.textContent = `👤 ${name}`;
-      document.getElementById('viewName').textContent = name;
-      document.getElementById('viewEmail').textContent = email;
-      document.getElementById('viewPhone').textContent = data.phone || 'Não informado';
-      document.getElementById('viewCity').textContent = data.city || 'Não informado';
+    btnAuthModal.onclick = () => {
+      if (currentUser) {
+        openProfileModal();
+      } else {
+        authModal.style.display = 'flex';
+      }
+    };
 
-      document.getElementById('profName').value = name;
-      document.getElementById('profEmail').value = email;
-      document.getElementById('profPhone').value = data.phone || '';
-      document.getElementById('profCity').value = data.city || '';
-    }
+    btnCloseAuthModal.onclick = () => authModal.style.display = 'none';
 
-    document.getElementById('formProfile').addEventListener('submit', async (e) => {
+    tabLogin.onclick = () => {
+      isRegisterMode = false;
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      registerFields.style.display = 'none';
+      btnAuthSubmit.innerText = 'Entrar';
+    };
+
+    tabRegister.onclick = () => {
+      isRegisterMode = true;
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      registerFields.style.display = 'block';
+      btnAuthSubmit.innerText = 'Cadastrar Conta';
+    };
+
+    authForm.onsubmit = async (e) => {
       e.preventDefault();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const btnSave = document.getElementById('btnSaveProfile');
-      btnSave.disabled = true;
-      btnSave.textContent = "Salvando...";
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
 
       try {
-        const newName = document.getElementById('profName').value.trim();
-        const newEmail = document.getElementById('profEmail').value.trim();
-        const newPhone = document.getElementById('profPhone').value.trim();
-        const newCity = document.getElementById('profCity').value.trim();
+        if (isRegisterMode) {
+          const name = document.getElementById('authName').value;
+          const phone = document.getElementById('authPhone').value;
+          const city = document.getElementById('authCity').value;
 
-        if (newEmail !== user.email) {
-          await updateEmail(user, newEmail);
+          const res = await createUserWithEmailAndPassword(auth, email, password);
+          await setDoc(doc(db, "users", res.user.uid), {
+            name, phone, city, email, createdAt: serverTimestamp()
+          });
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
         }
-
-        await updateDoc(doc(db, "users", user.uid), {
-          name: newName,
-          email: newEmail,
-          phone: newPhone,
-          city: newCity
-        });
-
-        await updateProfile(user, { displayName: newName });
-
-        alert("Perfil atualizado com sucesso!");
-        document.getElementById('profileView').style.display = 'block';
-        document.getElementById('formProfile').style.display = 'none';
+        authModal.style.display = 'none';
+        authForm.reset();
       } catch (err) {
-        alert("Erro ao salvar perfil: " + err.message);
-      } finally {
-        btnSave.disabled = false;
-        btnSave.textContent = "Salvar Alterações";
+        alert("Erro de Autenticação: " + err.message);
       }
-    });
+    };
 
-    function processImageFile(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width, height = img.height;
-            const maxDim = 800;
-            if (width > height) {
-              if (width > maxDim) { height *= maxDim / width; width = maxDim; }
-            } else {
-              if (height > maxDim) { width *= maxDim / height; height = maxDim; }
-            }
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
-          };
-          img.onerror = () => resolve(null);
-          img.src = event.target.result;
-        };
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
-      });
+    btnLogout.onclick = () => {
+      signOut(auth);
+      profileModal.style.display = 'none';
+    };
+
+    // --- GERENCIAMENTO DE PERFIL ---
+    function openProfileModal() {
+      if (!currentUserData) return;
+      document.getElementById('editName').value = currentUserData.name || '';
+      document.getElementById('editPhone').value = currentUserData.phone || '';
+      document.getElementById('editCity').value = currentUserData.city || '';
+      profileModal.style.display = 'flex';
+      switchProfileTab('profile');
     }
 
-    async function processMultipleImages(fileList) {
-      const files = Array.from(fileList).slice(0, 6);
-      const results = await Promise.all(files.map(file => processImageFile(file)));
-      return results.filter(res => res !== null);
+    btnCloseProfileModal.onclick = () => profileModal.style.display = 'none';
+
+    tabMyProfile.onclick = () => switchProfileTab('profile');
+    tabMyAds.onclick = () => switchProfileTab('ads');
+    tabMyChats.onclick = () => switchProfileTab('chats');
+
+    function switchProfileTab(tab) {
+      tabMyProfile.classList.toggle('active', tab === 'profile');
+      tabMyAds.classList.toggle('active', tab === 'ads');
+      tabMyChats.classList.toggle('active', tab === 'chats');
+
+      contentMyProfile.style.display = tab === 'profile' ? 'block' : 'none';
+      contentMyAds.style.display = tab === 'ads' ? 'block' : 'none';
+      contentMyChats.style.display = tab === 'chats' ? 'block' : 'none';
+
+      if (tab === 'ads') loadMyAds();
+      if (tab === 'chats') loadMyChats();
     }
 
-    document.getElementById('formNewAd').addEventListener('submit', async (e) => {
+    profileForm.onsubmit = async (e) => {
       e.preventDefault();
-      const user = auth.currentUser;
-      if (!user) return;
+      const name = document.getElementById('editName').value;
+      const phone = document.getElementById('editPhone').value;
+      const city = document.getElementById('editCity').value;
 
-      const adId = document.getElementById('editingAdId').value;
-      const title = document.getElementById('adTitle').value.trim();
+      await setDoc(doc(db, "users", currentUser.uid), {
+        name, phone, city
+      }, { merge: true });
+
+      currentUserData = { ...currentUserData, name, phone, city };
+      btnAuthModal.innerText = name;
+      alert("Perfil salvo com sucesso!");
+    };
+
+    // --- ANÚNCIOS (OFFERS) ---
+    btnNewAd.onclick = () => {
+      adForm.reset();
+      document.getElementById('adId').value = '';
+      document.getElementById('adModalTitle').innerText = 'Novo Anúncio de Troca';
+      adModal.style.display = 'flex';
+    };
+
+    btnCloseAdModal.onclick = () => adModal.style.display = 'none';
+
+    adForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const adId = document.getElementById('adId').value;
+      const title = document.getElementById('adTitle').value;
       const type = document.getElementById('adType').value;
       const category = document.getElementById('adCategory').value;
-      const wants = document.getElementById('adWants').value.trim();
-      const description = document.getElementById('adDescription').value.trim();
-      const fileInput = document.getElementById('adImageFiles');
+      const description = document.getElementById('adDescription').value;
+      const wants = document.getElementById('adWants').value;
+      const rawImages = document.getElementById('adImages').value;
 
-      if (containsForbiddenWords(title) || containsForbiddenWords(wants) || containsForbiddenWords(description)) {
-        alert("Sua publicação contém palavras não permitidas.");
-        return;
+      const images = rawImages ? rawImages.split(',').map(url => url.trim()).filter(url => url.length > 0) : [];
+
+      const payload = {
+        title, type, category, description, wants, images,
+        userId: currentUser.uid,
+        userName: currentUserData.name,
+        userPhone: currentUserData.phone,
+        userCity: currentUserData.city,
+        updatedAt: serverTimestamp()
+      };
+
+      if (adId) {
+        await setDoc(doc(db, "offers", adId), payload, { merge: true });
+      } else {
+        payload.createdAt = serverTimestamp();
+        await addDoc(collection(db, "offers"), payload);
       }
 
-      const btnPublish = document.getElementById('btnPublishAd');
-      btnPublish.disabled = true; 
-      btnPublish.textContent = "Processando fotos e salvando...";
+      adModal.style.display = 'none';
+      loadOffers();
+      if (profileModal.style.display === 'flex') loadMyAds();
+    };
 
-      try {
-        let images = [];
-        if (fileInput.files && fileInput.files.length > 0) {
-          images = await processMultipleImages(fileInput.files);
-        }
+    async function loadOffers() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const cat = document.getElementById('categoryFilter').value;
+      const type = document.getElementById('typeFilter').value;
 
-        const userName = currentUserData?.name || user.displayName || "Usuário";
-        const userCity = currentUserData?.city || "Brasil";
-        const userPhone = currentUserData?.phone || ""; // Atrelado para leitura de convidados
+      const snapshot = await getDocs(collection(db, "offers"));
+      offersGrid.innerHTML = '';
 
-        if (adId) {
-          const existingOffer = allOffers.find(o => o.id === adId);
-          const updateData = {
-            title, type, category, wants, description,
-            userName, userCity, userPhone
-          };
-          if (images.length > 0) {
-            updateData.images = images;
-          } else if (existingOffer && existingOffer.images) {
-            updateData.images = existingOffer.images;
-          }
+      let count = 0;
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        const id = docSnap.id;
 
-          await updateDoc(doc(db, "offers", adId), updateData);
-          alert("Anúncio atualizado com sucesso!");
-        } else {
-          await addDoc(collection(db, "offers"), {
-            userId: user.uid,
-            userName, userCity, userPhone,
-            title, type, category, wants, description,
-            images: images,
-            createdAt: new Date().toISOString()
-          });
-          alert("Anúncio publicado com sucesso!");
-        }
+        if (cat && item.category !== cat) return;
+        if (type && item.type !== type) return;
+        if (search && !item.title.toLowerCase().includes(search) && !item.description.toLowerCase().includes(search)) return;
 
-        newAdModal.style.display = 'none';
-        renderMyAds();
-      } catch (err) {
-        alert("Erro ao salvar anúncio: " + err.message);
-      } finally {
-        btnPublish.disabled = false; 
-        btnPublish.textContent = "Publicar Anúncio";
-      }
-    });
+        count++;
+        const card = document.createElement('div');
+        card.className = 'card';
 
-    const offersQuery = query(collection(db, "offers"), orderBy("createdAt", "desc"));
-    onSnapshot(offersQuery, (snapshot) => {
-      allOffers = [];
-      snapshot.forEach(docSnap => allOffers.push({ id: docSnap.id, ...docSnap.data() }));
-      renderOffers(allOffers);
-      renderMyAds();
-    });
+        const hasImages = item.images && item.images.length > 0;
+        const mainImage = hasImages ? item.images[0] : '';
 
-    function renderOffers(offers) {
-      if (offers.length === 0) {
-        offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>`;
-        return;
-      }
+        const cleanPhone = item.userPhone ? item.userPhone.replace(/\D/g, '') : '';
+        const waLink = `https://wa.me/55${cleanPhone}?text=Olá!%20Vi%20seu%20anúncio%20"${encodeURIComponent(item.title)}"%20no%20Trocaê.`;
 
-      offersGrid.innerHTML = offers.map(offer => {
-        const badgeClass = offer.type === 'servico' ? 'badge-servico' : 'badge-produto';
-        const typeText = offer.type === 'servico' ? 'Serviço' : 'Produto';
-        
-        let imagesList = [];
-        if (Array.isArray(offer.images) && offer.images.length > 0) {
-          imagesList = offer.images;
-        } else if (offer.imageUrl) {
-          imagesList = [offer.imageUrl];
-        }
-        
-        let galleryHtml = '';
-        if (imagesList.length > 0) {
-          galleryHtml = `
-            <div class="card-gallery-preview" data-offer-id="${offer.id}">
-              <img src="${imagesList[0]}" class="card-img" alt="${escapeHtml(offer.title)}" />
-              ${imagesList.length > 1 ? `<div class="gallery-badge">📷 1/${imagesList.length}</div>` : ''}
-            </div>
-          `;
-        } else {
-          galleryHtml = `
-            <div class="card-gallery-preview" style="cursor: default;">
+        card.innerHTML = `
+          <div class="card-gallery-preview" onclick="openGalleryViewer([${hasImages ? item.images.map(i => `'${i}'`).join(',') : ''}])">
+            ${hasImages ? `<img src="${mainImage}" class="card-img" />` : `
               <div class="no-image-placeholder">
-                <span>🖼️ Sem foto</span>
+                <span>📷 Sem fotos</span>
               </div>
+            `}
+            ${hasImages ? `<div class="gallery-badge">1 / ${item.images.length}</div>` : ''}
+          </div>
+          <div class="card-body">
+            <span class="card-badge ${item.type === 'servico' ? 'badge-servico' : 'badge-produto'}">
+              ${item.type === 'servico' ? 'SERVIÇO' : 'PRODUTO'}
+            </span>
+            <h3 class="card-title">${item.title}</h3>
+            <div class="description-container">
+              <p class="card-desc-text collapsed" id="desc-${id}">${item.description}</p>
+              <button class="btn-toggle-desc" id="btn-toggle-${id}" onclick="toggleDesc('${id}')">Ver mais</button>
             </div>
-          `;
-        }
-
-        const authorProfile = usersMap[offer.userId];
-        // Funciona tanto logado (busca no perfil atualizado) quanto deslogado (pega do próprio card)
-        const currentPhone = authorProfile?.phone || offer.userPhone || '';
-        const phoneClean = currentPhone.replace(/\D/g, '');
-
-        const waBtn = phoneClean ? 
-          `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
-          `<span style="font-size:0.75rem; color:var(--text-muted);">Sem WhatsApp</span>`;
-
-        return `
-          <div class="card">
-            ${galleryHtml}
-            <div class="card-body">
-              <span class="card-badge ${badgeClass}">${typeText}</span>
-              <h3 class="card-title">${escapeHtml(offer.title)}</h3>
-              
-              <div class="description-container">
-                <p class="card-desc-text collapsed" id="desc-${offer.id}">${escapeHtml(offer.description)}</p>
-                <button class="btn-toggle-desc" id="btn-desc-${offer.id}" onclick="toggleDesc('${offer.id}')">Ler mais</button>
+            <div class="card-wants">
+              <strong>Procura:</strong> ${item.wants}
+            </div>
+            <div class="card-footer">
+              <div class="user-info">
+                <strong>${item.userName || 'Anônimo'}</strong>
+                <span class="user-location">📍 ${item.userCity || 'Brasil'}</span>
               </div>
-
-              <div class="card-wants">
-                🔄 <strong>Procura:</strong> ${escapeHtml(offer.wants)}
-              </div>
-              <div class="card-footer">
-                <div class="user-info">
-                  <span>👤 ${escapeHtml(authorProfile?.name || offer.userName)}</span>
-                  <span class="user-location">📍 ${escapeHtml(authorProfile?.city || offer.userCity)}</span>
-                </div>
-                ${waBtn}
+              <div style="display: flex; gap: 5px;">
+                <button class="btn btn-chat-direct" onclick="startDirectChat('${id}', '${item.userId}', '${item.title.replace(/'/g, "\\'")}')">
+                  💬 Chat
+                </button>
+                <a href="${waLink}" target="_blank" class="btn btn-whatsapp">
+                  WhatsApp
+                </a>
               </div>
             </div>
           </div>
         `;
-      }).join('');
+        offersGrid.appendChild(card);
 
-      document.querySelectorAll('.card-gallery-preview[data-offer-id]').forEach(el => {
-        el.addEventListener('click', () => {
-          const id = el.getAttribute('data-offer-id');
-          openGallery(id, 0);
-        });
+        setTimeout(() => {
+          const descEl = document.getElementById(`desc-${id}`);
+          const btnEl = document.getElementById(`btn-toggle-${id}`);
+          if (descEl && descEl.scrollHeight > descEl.clientHeight) {
+            btnEl.style.display = 'block';
+          }
+        }, 100);
       });
 
-      setTimeout(() => {
-        offers.forEach(offer => {
-          const descEl = document.getElementById(`desc-${offer.id}`);
-          const btnEl = document.getElementById(`btn-desc-${offer.id}`);
-          if (descEl && btnEl) {
-            if (descEl.scrollHeight > descEl.clientHeight) {
-              btnEl.style.display = 'inline-block';
-            }
-          }
-        });
-      }, 50);
+      if (count === 0) {
+        offersGrid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>';
+      }
     }
 
-    window.toggleDesc = function(id) {
+    document.getElementById('btnSearch').onclick = loadOffers;
+
+    window.toggleDesc = (id) => {
       const descEl = document.getElementById(`desc-${id}`);
-      const btn = document.getElementById(`btn-desc-${id}`);
+      const btnEl = document.getElementById(`btn-toggle-${id}`);
       if (descEl.classList.contains('collapsed')) {
         descEl.classList.remove('collapsed');
-        btn.textContent = 'Recolher';
+        btnEl.innerText = 'Ver menos';
       } else {
         descEl.classList.add('collapsed');
-        btn.textContent = 'Ler mais';
+        btnEl.innerText = 'Ver mais';
       }
     };
 
-    function openGallery(offerId, startIndex) {
-      const offer = allOffers.find(o => o.id === offerId);
-      if (!offer) return;
+    // --- ANÚNCIOS DO USUÁRIO LOGADO ---
+    async function loadMyAds() {
+      if (!currentUser) return;
+      const q = query(collection(db, "offers"), where("userId", "==", currentUser.uid));
+      const snapshot = await getDocs(q);
+      myAdsList.innerHTML = '';
 
-      if (Array.isArray(offer.images) && offer.images.length > 0) {
-        currentGalleryImages = offer.images;
-      } else if (offer.imageUrl) {
-        currentGalleryImages = [offer.imageUrl];
-      } else {
+      if (snapshot.empty) {
+        myAdsList.innerHTML = '<p style="color: var(--text-muted);">Você ainda não criou nenhum anúncio.</p>';
         return;
       }
 
-      currentGalleryIndex = startIndex;
-      updateGalleryView();
-      galleryViewer.style.display = 'flex';
-    }
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        const id = docSnap.id;
 
-    function updateGalleryView() {
-      if (currentGalleryImages.length === 0) return;
-      document.getElementById('galleryFullImg').src = currentGalleryImages[currentGalleryIndex];
-      document.getElementById('galleryCounter').textContent = `${currentGalleryIndex + 1} de ${currentGalleryImages.length}`;
-    }
-
-    document.getElementById('btnPrevImg').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (currentGalleryImages.length <= 1) return;
-      currentGalleryIndex = (currentGalleryIndex - 1 + currentGalleryImages.length) % currentGalleryImages.length;
-      updateGalleryView();
-    });
-
-    document.getElementById('btnNextImg').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (currentGalleryImages.length <= 1) return;
-      currentGalleryIndex = (currentGalleryIndex + 1) % currentGalleryImages.length;
-      updateGalleryView();
-    });
-
-    document.getElementById('btnCloseGallery').addEventListener('click', () => {
-      galleryViewer.style.display = 'none';
-    });
-
-    function renderMyAds() {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const myOffers = allOffers.filter(o => o.userId === user.uid);
-      if (myOffers.length === 0) {
-        myAdsList.innerHTML = `<p style="color: var(--text-muted);">Você ainda não tem anúncios cadastrados.</p>`;
-        return;
-      }
-
-      myAdsList.innerHTML = myOffers.map(offer => `
-        <div class="my-ad-item">
+        const div = document.createElement('div');
+        div.className = 'my-ad-item';
+        div.innerHTML = `
           <div>
-            <strong>${escapeHtml(offer.title)}</strong>
-            <div style="font-size:0.75rem; color: var(--text-muted);">${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}</div>
+            <strong>${item.title}</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">${item.type.toUpperCase()} - ${item.category}</p>
           </div>
-          <div style="display:flex; gap: 0.5rem;">
-            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="editAd('${offer.id}')">✏️ Editar</button>
-            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="deleteAd('${offer.id}')">🗑️ Apagar</button>
+          <div>
+            <button class="btn btn-outline" onclick="editAd('${id}')" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Editar</button>
+            <button class="btn btn-outline" onclick="deleteAd('${id}')" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; color: var(--primary-red);">Excluir</button>
           </div>
-        </div>
-      `).join('');
+        `;
+        myAdsList.appendChild(div);
+      });
     }
 
-    window.editAd = function(id) {
-      const offer = allOffers.find(o => o.id === id);
-      if (!offer) return;
+    window.editAd = async (id) => {
+      const docSnap = await getDoc(doc(db, "offers", id));
+      if (!docSnap.exists()) return;
+      const item = docSnap.data();
 
-      document.getElementById('editingAdId').value = offer.id;
-      document.getElementById('adTitle').value = offer.title;
-      document.getElementById('adType').value = offer.type;
-      document.getElementById('adCategory').value = offer.category;
-      document.getElementById('adWants').value = offer.wants;
-      document.getElementById('adDescription').value = offer.description;
-      document.getElementById('adModalTitle').textContent = "Editar Anúncio";
+      document.getElementById('adId').value = id;
+      document.getElementById('adTitle').value = item.title;
+      document.getElementById('adType').value = item.type;
+      document.getElementById('adCategory').value = item.category;
+      document.getElementById('adDescription').value = item.description;
+      document.getElementById('adWants').value = item.wants;
+      document.getElementById('adImages').value = item.images ? item.images.join(', ') : '';
 
-      authModal.style.display = 'none';
-      newAdModal.style.display = 'flex';
+      document.getElementById('adModalTitle').innerText = 'Editar Anúncio';
+      profileModal.style.display = 'none';
+      adModal.style.display = 'flex';
     };
 
-    window.deleteAd = async function(id) {
-      if (!confirm("Tem certeza que deseja apagar este anúncio?")) return;
-      try {
+    window.deleteAd = async (id) => {
+      if (confirm("Tem certeza que deseja excluir este anúncio?")) {
         await deleteDoc(doc(db, "offers", id));
-        alert("Anúncio excluído com sucesso!");
-      } catch (err) {
-        alert("Erro ao excluir: " + err.message);
+        loadMyAds();
+        loadOffers();
       }
     };
 
-    btnSearch.addEventListener('click', filterOffers);
-    searchInput.addEventListener('input', filterOffers);
-    categoryFilter.addEventListener('change', filterOffers);
-    typeFilter.addEventListener('change', filterOffers);
+    // --- GALERIA DE FOTOS ---
+    window.openGalleryViewer = (images) => {
+      if (!images || images.length === 0) return;
+      currentGalleryImages = images;
+      currentGalleryIndex = 0;
+      updateGalleryImage();
+      galleryViewer.style.display = 'flex';
+    };
 
-    function filterOffers() {
-      const q = searchInput.value.toLowerCase().trim();
-      const cat = categoryFilter.value;
-      const type = typeFilter.value;
+    btnCloseGallery.onclick = () => galleryViewer.style.display = 'none';
 
-      const filtered = allOffers.filter(o => {
-        const matchQ = !q || o.title.toLowerCase().includes(q) || o.description.toLowerCase().includes(q) || o.wants.toLowerCase().includes(q);
-        const matchCat = !cat || o.category === cat;
-        const matchType = !type || o.type === type;
-        return matchQ && matchCat && matchType;
+    function updateGalleryImage() {
+      galleryFullImage.src = currentGalleryImages[currentGalleryIndex];
+      galleryCounter.innerText = `${currentGalleryIndex + 1} / ${currentGalleryImages.length}`;
+    }
+
+    btnGalleryPrev.onclick = () => {
+      currentGalleryIndex = (currentGalleryIndex - 1 + currentGalleryImages.length) % currentGalleryImages.length;
+      updateGalleryImage();
+    };
+
+    btnGalleryNext.onclick = () => {
+      currentGalleryIndex = (currentGalleryIndex + 1) % currentGalleryImages.length;
+      updateGalleryImage();
+    };
+
+    // --- SISTEMA DE CHAT DIRETO ---
+    window.startDirectChat = async (offerId, sellerId, offerTitle) => {
+      if (!currentUser) {
+        alert("Você precisa estar logado para iniciar um chat.");
+        authModal.style.display = 'flex';
+        return;
+      }
+      if (currentUser.uid === sellerId) {
+        alert("Você é o dono deste anúncio.");
+        return;
+      }
+
+      const chatId = `${offerId}_${currentUser.uid}`;
+      const chatRef = doc(db, "chats", chatId);
+
+      await setDoc(chatRef, {
+        participants: [currentUser.uid, sellerId],
+        offerId: offerId,
+        offerTitle: offerTitle,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      openActiveChat(chatId, offerTitle);
+    };
+
+    function loadMyChats() {
+      if (!currentUser) return;
+      const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
+
+      onSnapshot(q, (snapshot) => {
+        myChatsList.innerHTML = '';
+        if (snapshot.empty) {
+          myChatsList.innerHTML = '<p style="color: var(--text-muted);">Nenhuma conversa recente.</p>';
+          return;
+        }
+
+        snapshot.forEach(docSnap => {
+          const chat = docSnap.data();
+          const chatId = docSnap.id;
+
+          const div = document.createElement('div');
+          div.className = 'chat-item-card';
+          div.onclick = () => {
+            profileModal.style.display = 'none';
+            openActiveChat(chatId, chat.offerTitle);
+          };
+          div.innerHTML = `
+            <div>
+              <strong>${chat.offerTitle || 'Troca'}</strong>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">${chat.lastMessage || 'Iniciar conversa...'}</p>
+            </div>
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size:12px;">Abrir</button>
+          `;
+          myChatsList.appendChild(div);
+        });
+      });
+    }
+
+    window.openActiveChat = (chatId, title) => {
+      activeChatId = chatId;
+      document.getElementById('activeChatTitle').innerText = title || "Conversa";
+      document.getElementById('activeChatWindow').style.display = 'flex';
+
+      if (unsubscribeChatMessages) unsubscribeChatMessages();
+
+      const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+      unsubscribeChatMessages = onSnapshot(q, (snapshot) => {
+        const msgArea = document.getElementById('activeChatMessages');
+        msgArea.innerHTML = '';
+
+        snapshot.forEach(docSnap => {
+          const msg = docSnap.data();
+          const div = document.createElement('div');
+          div.className = `chat-msg-bubble ${msg.senderId === currentUser.uid ? 'me' : 'them'}`;
+          div.innerText = msg.text;
+          msgArea.appendChild(div);
+        });
+
+        msgArea.scrollTop = msgArea.scrollHeight;
+      });
+    };
+
+    window.sendChatMessage = async () => {
+      const input = document.getElementById('activeChatInput');
+      const text = input.value.trim();
+      if (!text || !activeChatId || !currentUser) return;
+
+      input.value = '';
+
+      await addDoc(collection(db, "chats", activeChatId, "messages"), {
+        senderId: currentUser.uid,
+        text: text,
+        createdAt: serverTimestamp()
       });
 
-      renderOffers(filtered);
-    }
+      await setDoc(doc(db, "chats", activeChatId), {
+        lastMessage: text,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    };
 
-    function escapeHtml(text) {
-      if (!text) return '';
-      return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
-    }
-
-    document.getElementById('formLogin').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      try {
-        await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
-        authModal.style.display = 'none';
-      } catch (err) { alert("Erro: " + err.message); }
-    });
-
-    document.getElementById('formRegister').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const rawName = document.getElementById('regName').value.trim();
-      const nameParts = rawName.split(/\s+/);
-      if (nameParts.length < 2) return alert("Informe Nome e Sobrenome.");
-      
-      const formattedName = `${nameParts[0]} ${nameParts[1]}`;
-      const regEmail = document.getElementById('regEmail').value.trim();
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, regEmail, document.getElementById('regPassword').value);
-        await updateProfile(userCred.user, { displayName: formattedName });
-        await setDoc(doc(db, "users", userCred.user.uid), {
-          uid: userCred.user.uid, name: formattedName, email: regEmail,
-          city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
-          createdAt: new Date().toISOString()
-        }, { merge: true });
-        authModal.style.display = 'none';
-      } catch (err) { alert("Erro: " + err.message); }
-    });
-
-    document.getElementById('btnGoogleAuth').addEventListener('click', () => signInWithRedirect(auth, new GoogleAuthProvider()));
-    
-    document.getElementById('linkToRegister').addEventListener('click', (e) => { e.preventDefault(); showModalTab('register'); });
-    document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('login'); });
-    document.getElementById('btnEnableEdit').addEventListener('click', () => {
-      document.getElementById('profileView').style.display = 'none';
-      document.getElementById('formProfile').style.display = 'block';
-    });
-    document.getElementById('btnCancelEdit').addEventListener('click', () => {
-      document.getElementById('profileView').style.display = 'block';
-      document.getElementById('formProfile').style.display = 'none';
-    });
+    window.closeActiveChat = () => {
+      document.getElementById('activeChatWindow').style.display = 'none';
+      if (unsubscribeChatMessages) unsubscribeChatMessages();
+      activeChatId = null;
+    };
   </script>
 </body>
 </html>
