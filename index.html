@@ -786,6 +786,9 @@
     let currentChatId = null;
     let currentChatOtherUserId = null;
 
+    let modalAdImages = [];
+    let modalAdImageIndex = 0;
+
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica",
       "pinto", "merda", "cacete", "arrombado", "desgraca", "viado",
@@ -912,7 +915,13 @@
       if (tab === 'register') document.getElementById('registerFormContainer').style.display = 'block';
       if (tab === 'profile') {
         document.getElementById('profileFormContainer').style.display = 'block';
-        tabInfoBtn.click();
+        
+        const activeTabBtn = document.querySelector('.profile-tabs .tab-btn.active');
+        if (activeTabBtn) {
+          activeTabBtn.click();
+        } else {
+          tabInfoBtn.click();
+        }
       }
       authModal.style.display = 'flex';
     }
@@ -1258,21 +1267,18 @@
       }, 50);
     }
 
-    /* --- REDIRECIONAR / ABRIR ANÚNCIO DIRETO COM VALIDAÇÃO --- */
+    /* --- ABRIR DETALHES DO ANÚNCIO (COM GALERIA NAVEGÁVEL COMPLETA) --- */
     window.openAdDetails = function(offerId) {
       const offer = allOffers.find(o => o.id === offerId);
 
       if (!offer) {
         alert("Este anúncio não está disponível!");
-        
-        // Se o anúncio não existe mais, remove dos favoritos automaticamente
         if (userFavorites.includes(offerId)) {
           toggleFavorite(offerId);
         }
         return;
       }
 
-      // Fecha o modal de perfil se estiver aberto
       authModal.style.display = 'none';
 
       const authorProfile = usersMap[offer.userId];
@@ -1280,13 +1286,22 @@
       const phoneClean = currentPhone.replace(/\D/g, '');
       const isFav = userFavorites.includes(offer.id);
 
-      let imagesList = Array.isArray(offer.images) && offer.images.length > 0 ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []);
-      let galleryHtml = imagesList.length > 0 ? `
-        <div class="card-gallery-preview" onclick="openGallery('${offer.id}', 0)" style="margin-bottom: 1rem; border-radius: 8px;">
-          <img src="${imagesList[0]}" class="card-img" />
-          ${imagesList.length > 1 ? `<div class="gallery-badge">📷 1/${imagesList.length}</div>` : ''}
-        </div>
-      ` : '';
+      modalAdImages = Array.isArray(offer.images) && offer.images.length > 0 ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []);
+      modalAdImageIndex = 0;
+
+      let galleryHtml = '';
+      if (modalAdImages.length > 0) {
+        galleryHtml = `
+          <div class="card-gallery-preview" style="margin-bottom: 1rem; border-radius: 8px; position: relative;">
+            <img id="viewAdMainImg" src="${modalAdImages[0]}" class="card-img" onclick="openGallery('${offer.id}', modalAdImageIndex)" style="cursor: pointer;" />
+            ${modalAdImages.length > 1 ? `
+              <button onclick="navigateModalAdImg(-1, '${offer.id}')" class="gallery-nav-btn gallery-prev" style="left: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10094;</button>
+              <button onclick="navigateModalAdImg(1, '${offer.id}')" class="gallery-nav-btn gallery-next" style="right: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10095;</button>
+              <div id="viewAdImgBadge" class="gallery-badge">📷 1/${modalAdImages.length}</div>
+            ` : ''}
+          </div>
+        `;
+      }
 
       const waBtn = phoneClean ?
         `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="flex:1; justify-content:center;">📱 WhatsApp</a>` : '';
@@ -1307,14 +1322,27 @@
         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
           <button class="btn btn-outline" style="flex:1; justify-content:center; border-color: var(--primary-blue);" onclick="openChatForOffer('${offer.id}', '${offer.userId}')">💬 Chat</button>
           ${waBtn}
-          <button class="btn btn-outline" style="border-color: rgba(255,255,255,0.2);" onclick="toggleFavorite('${offer.id}')">${isFav ? '❤️ Remover' : '🤍 Favoritar'}</button>
+          <button id="btnFavModalAd" class="btn btn-outline" style="border-color: rgba(255,255,255,0.2);" onclick="toggleFavorite('${offer.id}')">
+            ${isFav ? '❤️ Remover dos Favoritos' : '🤍 Adicionar aos Favoritos'}
+          </button>
         </div>
       `;
 
       viewAdModal.style.display = 'flex';
     };
 
-    /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
+    window.navigateModalAdImg = function(direction, offerId) {
+      if (modalAdImages.length <= 1) return;
+      modalAdImageIndex = (modalAdImageIndex + direction + modalAdImages.length) % modalAdImages.length;
+      
+      const imgEl = document.getElementById('viewAdMainImg');
+      const badgeEl = document.getElementById('viewAdImgBadge');
+      
+      if (imgEl) imgEl.src = modalAdImages[modalAdImageIndex];
+      if (badgeEl) badgeEl.textContent = `📷 ${modalAdImageIndex + 1}/${modalAdImages.length}`;
+    };
+
+    /* --- TOGGLE FAVORITOS INSTANTÂNEO EM TODOS OS LUGARES --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
       if (!user) {
@@ -1322,20 +1350,26 @@
         return;
       }
 
-      let updatedFavs = [...userFavorites];
-      if (updatedFavs.includes(offerId)) {
-        updatedFavs = updatedFavs.filter(id => id !== offerId);
+      if (userFavorites.includes(offerId)) {
+        userFavorites = userFavorites.filter(id => id !== offerId);
       } else {
-        updatedFavs.push(offerId);
+        userFavorites.push(offerId);
       }
 
-      userFavorites = updatedFavs;
       renderOffers(allOffers);
       renderMyFavs();
 
+      const btnFavModalAd = document.getElementById('btnFavModalAd');
+      if (btnFavModalAd) {
+        const isFav = userFavorites.includes(offerId);
+        btnFavModalAd.innerHTML = isFav ? '❤️ Remover dos Favoritos' : '🤍 Adicionar aos Favoritos';
+      }
+
       try {
-        await updateDoc(doc(db, "users", user.uid), { favorites: updatedFavs });
-      } catch (err) {}
+        await updateDoc(doc(db, "users", user.uid), { favorites: userFavorites });
+      } catch (err) {
+        console.error("Erro ao sincronizar favoritos:", err);
+      }
     };
 
     function renderMyFavs() {
@@ -1350,12 +1384,11 @@
       myFavsList.innerHTML = userFavorites.map(favId => {
         const offer = allOffers.find(o => o.id === favId);
         
-        // Exibe o item mesmo que tenha sido apagado para o usuário poder clicar
         const title = offer ? escapeHtml(offer.title) : 'Anúncio Indisponível';
         const sub = offer ? `${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}` : 'Este item foi removido pelo anunciante';
 
         return `
-          <div class="fav-item">
+          <div class="fav-item" id="fav-item-${favId}">
             <div style="flex: 1; cursor: pointer;" onclick="openAdDetails('${favId}')">
               <strong>${title}</strong>
               <div style="font-size:0.75rem; color: var(--text-muted);">${sub}</div>
@@ -1368,7 +1401,6 @@
       }).join('');
     }
 
-    /* --- RENDERIZAÇÃO DA ABA BLOQUEADOS E DESBLOQUEIO --- */
     function renderMyBlocked() {
       const user = auth.currentUser;
       if (!user) return;
@@ -1409,7 +1441,6 @@
       }
     };
 
-    /* --- LÓGICA DO CHAT + BLOQUEIO + EXCLUSÃO INDIVIDUAL --- */
     window.openChatForOffer = async function(offerId, ownerId) {
       const user = auth.currentUser;
       if (!user) {
