@@ -461,7 +461,7 @@
       <div class="nav-actions">
         <button id="btnMyChatsNav" class="btn btn-outline auth-only">💬 Meus Chats</button>
         <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
-        <button id="btnAuthModal" class="btn btn-outline">Carregando...</button>
+        <button id="btnAuthModal" class="btn btn-outline">Entrar / Cadastrar</button>
       </div>
     </div>
   </header>
@@ -536,7 +536,7 @@
     </div>
   </div>
 
-  <!-- MODAL PERFIL / MEUS ANÚNCIOS -->
+  <!-- MODAL PERFIL / AUTH -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <div style="text-align:right;">
@@ -851,7 +851,7 @@
         usersMap[docSnap.id] = docSnap.data();
       });
       renderOffers(allOffers);
-    }, () => {});
+    }, (err) => console.log("Erro ao escutar usuarios:", err));
 
     onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
@@ -887,7 +887,7 @@
       document.getElementById('profCity').value = data.city || '';
     }
 
-    /* SISTEMA DE CHAT PRIVADO NO SITE */
+    /* SISTEMA DE CHAT PRIVADO */
     window.openChatWithUser = async function(targetUserId, offerTitle, targetName) {
       const currentUser = auth.currentUser;
       if (!currentUser) {
@@ -915,7 +915,7 @@
           },
           offerTitle: offerTitle,
           lastMessage: '',
-          updatedAt: serverTimestamp()
+          updatedAt: new Date().toISOString()
         });
       }
 
@@ -929,7 +929,7 @@
     function loadChatMessages(chatId) {
       if (unsubscribeChatMessages) unsubscribeChatMessages();
 
-      const msgsQuery = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+      const msgsQuery = query(collection(db, "chats", chatId, "messages"));
       const messagesBox = document.getElementById('chatMessagesBox');
       messagesBox.innerHTML = "<p style='color:var(--text-muted);'>Carregando mensagens...</p>";
 
@@ -940,8 +940,11 @@
           return;
         }
 
-        snapshot.forEach(docSnap => {
-          const msg = docSnap.data();
+        let msgs = [];
+        snapshot.forEach(docSnap => msgs.push(docSnap.data()));
+        msgs.sort((a,b) => (a.createdAt || '') > (b.createdAt || '') ? 1 : -1);
+
+        msgs.forEach(msg => {
           const isMe = msg.senderId === auth.currentUser.uid;
           const msgDiv = document.createElement('div');
           msgDiv.className = `chat-message ${isMe ? 'msg-sent' : 'msg-received'}`;
@@ -1164,12 +1167,26 @@
       }
     });
 
-    const offersQuery = query(collection(db, "offers"), orderBy("createdAt", "desc"));
-    onSnapshot(offersQuery, (snapshot) => {
+    // CONSULTA SEGURA E SEM ERROS DE ÍNDICE
+    const offersRef = collection(db, "offers");
+    onSnapshot(offersRef, (snapshot) => {
       allOffers = [];
-      snapshot.forEach(docSnap => allOffers.push({ id: docSnap.id, ...docSnap.data() }));
+      snapshot.forEach(docSnap => {
+        allOffers.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      // Ordenar localmente pelo tempo mais recente
+      allOffers.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
       renderOffers(allOffers);
       renderMyAds();
+    }, (err) => {
+      console.error("Erro ao carregar anúncios:", err);
+      offersGrid.innerHTML = `<p style="color: var(--primary-red); grid-column: 1 / -1;">Erro ao carregar anúncios. Verifique sua conexão ou regras de banco de dados.</p>`;
     });
 
     function renderOffers(offers) {
@@ -1211,7 +1228,7 @@
         const currentPhone = authorProfile?.phone || offer.userPhone || '';
         const phoneClean = currentPhone.replace(/\D/g, '');
 
-        const authorName = authorProfile?.name || offer.userName;
+        const authorName = authorProfile?.name || offer.userName || "Usuário";
 
         const waBtn = phoneClean ? 
           `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; border-color: var(--whatsapp-green); color: var(--whatsapp-green);">📱 Whats</a>` : '';
@@ -1236,7 +1253,7 @@
               <div class="card-footer">
                 <div class="user-info">
                   <span>👤 ${escapeHtml(authorName)}</span>
-                  <span class="user-location">📍 ${escapeHtml(authorProfile?.city || offer.userCity)}</span>
+                  <span class="user-location">📍 ${escapeHtml(authorProfile?.city || offer.userCity || 'Brasil')}</span>
                 </div>
                 <div style="display:flex; gap:0.4rem;">
                   ${waBtn}
