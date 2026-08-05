@@ -394,7 +394,7 @@
       display: flex; justify-content: space-between; align-items: center;
       gap: 0.5rem;
     }
-    .chat-item:hover, .fav-item:hover, .blocked-item:hover { border-color: var(--primary-blue); }
+    .my-ad-item:hover, .chat-item:hover, .fav-item:hover, .blocked-item:hover { border-color: var(--primary-blue); }
 
     .chat-header-bar {
       display: flex;
@@ -647,6 +647,14 @@
     </div>
   </div>
 
+  <!-- MODAL DE VISUALIZAÇÃO DE DETALHES DO ANÚNCIO -->
+  <div id="viewAdModal" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" id="btnCloseViewAdModal">&times;</button>
+      <div id="viewAdContent"></div>
+    </div>
+  </div>
+
   <!-- MODAL DE ANÚNCIO (CRIAR / EDITAR) -->
   <div id="newAdModal" class="modal-overlay">
     <div class="modal-card">
@@ -794,12 +802,14 @@
     const newAdModal = document.getElementById('newAdModal');
     const chatModal = document.getElementById('chatModal');
     const galleryViewer = document.getElementById('galleryViewer');
+    const viewAdModal = document.getElementById('viewAdModal');
 
     const btnAuthModal = document.getElementById('btnAuthModal');
     const btnNewAd = document.getElementById('btnNewAd');
     const btnCloseModal = document.getElementById('btnCloseModal');
     const btnCloseAdModal = document.getElementById('btnCloseAdModal');
     const btnCloseChatModal = document.getElementById('btnCloseChatModal');
+    const btnCloseViewAdModal = document.getElementById('btnCloseViewAdModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
     const btnBlockUser = document.getElementById('btnBlockUser');
 
@@ -887,6 +897,7 @@
 
     btnCloseAdModal.addEventListener('click', () => newAdModal.style.display = 'none');
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
+    btnCloseViewAdModal.addEventListener('click', () => viewAdModal.style.display = 'none');
     btnCloseChatModal.addEventListener('click', () => {
       if (unsubscribeChatMessages) unsubscribeChatMessages();
       chatModal.style.display = 'none';
@@ -1247,6 +1258,62 @@
       }, 50);
     }
 
+    /* --- REDIRECIONAR / ABRIR ANÚNCIO DIRETO COM VALIDAÇÃO --- */
+    window.openAdDetails = function(offerId) {
+      const offer = allOffers.find(o => o.id === offerId);
+
+      if (!offer) {
+        alert("Este anúncio não está disponível!");
+        
+        // Se o anúncio não existe mais, remove dos favoritos automaticamente
+        if (userFavorites.includes(offerId)) {
+          toggleFavorite(offerId);
+        }
+        return;
+      }
+
+      // Fecha o modal de perfil se estiver aberto
+      authModal.style.display = 'none';
+
+      const authorProfile = usersMap[offer.userId];
+      const currentPhone = authorProfile?.phone || offer.userPhone || '';
+      const phoneClean = currentPhone.replace(/\D/g, '');
+      const isFav = userFavorites.includes(offer.id);
+
+      let imagesList = Array.isArray(offer.images) && offer.images.length > 0 ? offer.images : (offer.imageUrl ? [offer.imageUrl] : []);
+      let galleryHtml = imagesList.length > 0 ? `
+        <div class="card-gallery-preview" onclick="openGallery('${offer.id}', 0)" style="margin-bottom: 1rem; border-radius: 8px;">
+          <img src="${imagesList[0]}" class="card-img" />
+          ${imagesList.length > 1 ? `<div class="gallery-badge">📷 1/${imagesList.length}</div>` : ''}
+        </div>
+      ` : '';
+
+      const waBtn = phoneClean ?
+        `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="flex:1; justify-content:center;">📱 WhatsApp</a>` : '';
+
+      const viewContent = document.getElementById('viewAdContent');
+      viewContent.innerHTML = `
+        <span class="card-badge ${offer.type === 'servico' ? 'badge-servico' : 'badge-produto'}" style="margin-bottom:0.8rem;">${offer.type.toUpperCase()}</span>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">${escapeHtml(offer.title)}</h2>
+        ${galleryHtml}
+        <p style="white-space: pre-wrap; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">${escapeHtml(offer.description)}</p>
+        <div class="card-wants" style="margin-bottom: 1.2rem;">
+          🔄 <strong>Procura:</strong> ${escapeHtml(offer.wants)}
+        </div>
+        <div style="background: var(--dark-bg); padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
+          <div>👤 <strong>${escapeHtml(authorProfile?.name || offer.userName)}</strong></div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">📍 ${escapeHtml(authorProfile?.city || offer.userCity)}</div>
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button class="btn btn-outline" style="flex:1; justify-content:center; border-color: var(--primary-blue);" onclick="openChatForOffer('${offer.id}', '${offer.userId}')">💬 Chat</button>
+          ${waBtn}
+          <button class="btn btn-outline" style="border-color: rgba(255,255,255,0.2);" onclick="toggleFavorite('${offer.id}')">${isFav ? '❤️ Remover' : '🤍 Favoritar'}</button>
+        </div>
+      `;
+
+      viewAdModal.style.display = 'flex';
+    };
+
     /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
@@ -1264,7 +1331,7 @@
 
       userFavorites = updatedFavs;
       renderOffers(allOffers);
-      renderMyFavs(); // Atualiza a aba de favoritos na hora caso ela esteja aberta!
+      renderMyFavs();
 
       try {
         await updateDoc(doc(db, "users", user.uid), { favorites: updatedFavs });
@@ -1280,25 +1347,25 @@
         return;
       }
 
-      const favOffers = allOffers.filter(o => userFavorites.includes(o.id));
+      myFavsList.innerHTML = userFavorites.map(favId => {
+        const offer = allOffers.find(o => o.id === favId);
+        
+        // Exibe o item mesmo que tenha sido apagado para o usuário poder clicar
+        const title = offer ? escapeHtml(offer.title) : 'Anúncio Indisponível';
+        const sub = offer ? `${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}` : 'Este item foi removido pelo anunciante';
 
-      if (favOffers.length === 0) {
-        myFavsList.innerHTML = `<p style="color: var(--text-muted);">Anúncios favoritados foram removidos ou não existem mais.</p>`;
-        return;
-      }
-
-      myFavsList.innerHTML = favOffers.map(offer => `
-        <div class="fav-item">
-          <div>
-            <strong>${escapeHtml(offer.title)}</strong>
-            <div style="font-size:0.75rem; color: var(--text-muted);">${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}</div>
+        return `
+          <div class="fav-item">
+            <div style="flex: 1; cursor: pointer;" onclick="openAdDetails('${favId}')">
+              <strong>${title}</strong>
+              <div style="font-size:0.75rem; color: var(--text-muted);">${sub}</div>
+            </div>
+            <div style="display:flex; gap: 0.4rem;">
+              <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="toggleFavorite('${favId}')">❌ Remover</button>
+            </div>
           </div>
-          <div style="display:flex; gap: 0.4rem;">
-            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openChatForOffer('${offer.id}', '${offer.userId}')">💬 Chat</button>
-            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="toggleFavorite('${offer.id}')">❌ Remover</button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     /* --- RENDERIZAÇÃO DA ABA BLOQUEADOS E DESBLOQUEIO --- */
@@ -1356,7 +1423,12 @@
       }
 
       const offer = allOffers.find(o => o.id === offerId);
-      if (!offer) return;
+      if (!offer) {
+        alert("Este anúncio não está disponível!");
+        return;
+      }
+
+      viewAdModal.style.display = 'none';
 
       const chatId = [user.uid, ownerId, offerId].sort().join('_');
       currentChatId = chatId;
@@ -1648,7 +1720,7 @@
 
       myAdsList.innerHTML = myOffers.map(offer => `
         <div class="my-ad-item">
-          <div>
+          <div style="flex: 1; cursor: pointer;" onclick="openAdDetails('${offer.id}')">
             <strong>${escapeHtml(offer.title)}</strong>
             <div style="font-size:0.75rem; color: var(--text-muted);">${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}</div>
           </div>
