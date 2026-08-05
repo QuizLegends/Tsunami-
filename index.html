@@ -191,7 +191,6 @@
 
     .card:hover { transform: translateY(-4px); border-color: var(--primary-blue); }
 
-    /* BOTÃO FAVORITO (CORAÇÃO) */
     .btn-fav {
       position: absolute;
       top: 10px;
@@ -396,6 +395,15 @@
       gap: 0.5rem;
     }
     .chat-item:hover, .fav-item:hover { border-color: var(--primary-blue); }
+
+    .chat-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+      margin-bottom: 1rem;
+    }
 
     .chat-messages-container {
       height: 320px;
@@ -678,12 +686,20 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHAT EM TEMPO REAL -->
+  <!-- MODAL DE CHAT EM TEMPO REAL COM OPÇÃO DE BLOQUEIO -->
   <div id="chatModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseChatModal">&times;</button>
-      <h2 class="modal-title" id="chatModalTitle" style="font-size: 1.2rem; margin-bottom: 0.5rem;">Chat da Troca</h2>
-      <p id="chatModalSubtitle" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 1rem;"></p>
+      
+      <div class="chat-header-bar">
+        <div>
+          <h2 id="chatModalTitle" style="font-size: 1.1rem; margin-bottom: 0.2rem;">Chat da Troca</h2>
+          <p id="chatModalSubtitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
+        </div>
+        <button id="btnBlockUser" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);">
+          🚫 Bloquear
+        </button>
+      </div>
 
       <div id="chatMessages" class="chat-messages-container">
         <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">Carregando mensagens...</p>
@@ -691,8 +707,11 @@
 
       <form id="formSendMessage" class="chat-input-row">
         <input type="text" id="chatInputMessage" class="form-input" style="margin-bottom: 0;" placeholder="Digite sua mensagem..." required />
-        <button type="submit" class="btn btn-gradient">Enviar</button>
+        <button type="submit" id="btnSubmitMsg" class="btn btn-gradient">Enviar</button>
       </form>
+      <p id="chatBlockedNotice" style="display: none; color: var(--primary-red); font-size: 0.85rem; text-align: center; margin-top: 0.5rem; font-weight: bold;">
+        🚫 Usuário bloqueado. Desbloqueie para voltar a conversar.
+      </p>
     </div>
   </div>
 
@@ -719,8 +738,8 @@
       updateProfile, updateEmail, GoogleAuthProvider, signOut
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import {
-      getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc,
-      collection, query, orderBy, onSnapshot, where, getDocs
+      getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc,
+      collection, query, orderBy, onSnapshot, where, getDocs, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -742,12 +761,14 @@
     let unsubscribeUnreadChats = null;
     let currentUserData = null;
     let userFavorites = [];
+    let userBlockedList = [];
     let unreadCount = 0;
     let allOffers = [];
     let usersMap = {};
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
     let currentChatId = null;
+    let currentChatOtherUserId = null;
 
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica",
@@ -772,6 +793,7 @@
     const btnCloseAdModal = document.getElementById('btnCloseAdModal');
     const btnCloseChatModal = document.getElementById('btnCloseChatModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
+    const btnBlockUser = document.getElementById('btnBlockUser');
 
     const tabInfoBtn = document.getElementById('tabInfoBtn');
     const tabAdsBtn = document.getElementById('tabAdsBtn');
@@ -894,7 +916,7 @@
         usersMap[docSnap.id] = docSnap.data();
       });
       renderOffers(allOffers);
-    }, (error) => {});
+    });
 
     onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
@@ -907,6 +929,7 @@
           if (snapshot.exists()) {
             currentUserData = snapshot.data();
             userFavorites = currentUserData.favorites || [];
+            userBlockedList = currentUserData.blockedUsers || [];
             renderProfileData(currentUserData);
             renderOffers(allOffers);
           }
@@ -917,13 +940,14 @@
         btnAuthModal.textContent = "Entrar / Cadastrar";
         currentUserData = null;
         userFavorites = [];
+        userBlockedList = [];
         document.querySelectorAll('.auth-only').forEach(el => el.style.display = 'none');
         renderOffers(allOffers);
       }
     });
 
     function setupUnreadNotifications(userId) {
-      const chatsQuery = query(collection(db, "chats"), where("participants", "array-contains", userId));
+      const chatsQuery = query(collection(db, "chats"), where("visibleTo", "array-contains", userId));
       unsubscribeUnreadChats = onSnapshot(chatsQuery, (snapshot) => {
         let count = 0;
         snapshot.docs.forEach(docSnap => {
@@ -943,7 +967,7 @@
       const name = currentUserData?.name || auth.currentUser?.displayName || 'Usuário';
 
       if (unreadCount > 0) {
-        btnAuthModal.textContent = `🔴 ${name} (${unreadCount})`;
+        btnAuthModal.textContent = `🔔 ${name} (${unreadCount})`;
         tabBadge.textContent = unreadCount;
         tabBadge.style.display = 'inline-block';
       } else {
@@ -1115,12 +1139,15 @@
     });
 
     function renderOffers(offers) {
-      if (offers.length === 0) {
+      // FILTRA ANÚNCIOS DE USUÁRIOS BLOQUEADOS
+      const visibleOffers = offers.filter(o => !userBlockedList.includes(o.userId));
+
+      if (visibleOffers.length === 0) {
         offersGrid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum anúncio encontrado.</p>`;
         return;
       }
 
-      offersGrid.innerHTML = offers.map(offer => {
+      offersGrid.innerHTML = visibleOffers.map(offer => {
         const badgeClass = offer.type === 'servico' ? 'badge-servico' : 'badge-produto';
         const typeText = offer.type === 'servico' ? 'Serviço' : 'Produto';
         const isFav = userFavorites.includes(offer.id);
@@ -1199,7 +1226,7 @@
       });
 
       setTimeout(() => {
-        offers.forEach(offer => {
+        visibleOffers.forEach(offer => {
           const descEl = document.getElementById(`desc-${offer.id}`);
           const btnEl = document.getElementById(`btn-desc-${offer.id}`);
           if (descEl && btnEl) {
@@ -1211,7 +1238,6 @@
       }, 50);
     }
 
-    /* --- LÓGICA DE FAVORITOS --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
       if (!user) {
@@ -1230,12 +1256,8 @@
       renderOffers(allOffers);
 
       try {
-        await updateDoc(doc(db, "users", user.uid), {
-          favorites: updatedFavs
-        });
-      } catch (err) {
-        console.error("Erro ao atualizar favoritos:", err);
-      }
+        await updateDoc(doc(db, "users", user.uid), { favorites: updatedFavs });
+      } catch (err) {}
     };
 
     function renderMyFavs() {
@@ -1268,7 +1290,7 @@
       `).join('');
     }
 
-    /* --- LÓGICA DO CHAT EM TEMPO REAL --- */
+    /* --- LÓGICA DO CHAT + BLOQUEIO + EXCLUSÃO INDIVIDUAL --- */
     window.openChatForOffer = async function(offerId, ownerId) {
       const user = auth.currentUser;
       if (!user) {
@@ -1286,43 +1308,87 @@
 
       const chatId = [user.uid, ownerId, offerId].sort().join('_');
       currentChatId = chatId;
+      currentChatOtherUserId = ownerId;
 
       const chatRef = doc(db, "chats", chatId);
       await setDoc(chatRef, {
         offerId: offerId,
         offerTitle: offer.title,
         participants: [user.uid, ownerId],
+        visibleTo: arrayUnion(user.uid, ownerId), // Garante visibilidade para ambos ao recriar/interagir
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
       document.getElementById('chatModalTitle').textContent = `Chat: ${offer.title}`;
       const ownerName = usersMap[ownerId]?.name || offer.userName || "Anunciante";
-      document.getElementById('chatModalSubtitle').textContent = `Falando com ${ownerName}`;
+      document.getElementById('chatModalSubtitle').textContent = `Com ${ownerName}`;
 
+      updateBlockButtonUI();
       clearUnreadFlag(chatId);
       listenMessages(chatId);
       chatModal.style.display = 'flex';
     };
 
-    window.openExistingChat = function(chatId, offerTitle) {
+    window.openExistingChat = async function(chatId, offerTitle, otherUserId) {
       authModal.style.display = 'none';
       currentChatId = chatId;
-      document.getElementById('chatModalTitle').textContent = `Chat: ${offerTitle}`;
-      document.getElementById('chatModalSubtitle').textContent = "Conversa em tempo real";
+      currentChatOtherUserId = otherUserId;
 
+      document.getElementById('chatModalTitle').textContent = `Chat: ${offerTitle}`;
+      const ownerName = usersMap[otherUserId]?.name || "Anunciante";
+      document.getElementById('chatModalSubtitle').textContent = `Com ${ownerName}`;
+
+      updateBlockButtonUI();
       clearUnreadFlag(chatId);
       listenMessages(chatId);
       chatModal.style.display = 'flex';
     };
+
+    function updateBlockButtonUI() {
+      const isBlocked = userBlockedList.includes(currentChatOtherUserId);
+      const inputForm = document.getElementById('formSendMessage');
+      const notice = document.getElementById('chatBlockedNotice');
+
+      if (isBlocked) {
+        btnBlockUser.textContent = "🟢 Desbloquear";
+        btnBlockUser.style.borderColor = "var(--whatsapp-green)";
+        btnBlockUser.style.color = "var(--whatsapp-green)";
+        inputForm.style.display = 'none';
+        notice.style.display = 'block';
+      } else {
+        btnBlockUser.textContent = "🚫 Bloquear";
+        btnBlockUser.style.borderColor = "var(--primary-red)";
+        btnBlockUser.style.color = "var(--primary-red)";
+        inputForm.style.display = 'flex';
+        notice.style.display = 'none';
+      }
+    }
+
+    btnBlockUser.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user || !currentChatOtherUserId) return;
+
+      const isBlocked = userBlockedList.includes(currentChatOtherUserId);
+      const userRef = doc(db, "users", user.uid);
+
+      if (isBlocked) {
+        await updateDoc(userRef, { blockedUsers: arrayRemove(currentChatOtherUserId) });
+        alert("Usuário desbloqueado!");
+      } else {
+        if (!confirm("Tem certeza que deseja bloquear este usuário? Você deixará de ver os anúncios e conversas com ele.")) return;
+        await updateDoc(userRef, { blockedUsers: arrayUnion(currentChatOtherUserId) });
+        alert("Usuário bloqueado com sucesso!");
+      }
+
+      updateBlockButtonUI();
+      renderOffers(allOffers);
+    });
 
     async function clearUnreadFlag(chatId) {
       const user = auth.currentUser;
       if (!user) return;
       try {
-        const chatDoc = doc(db, "chats", chatId);
-        await updateDoc(chatDoc, {
-          hasUnread: false
-        });
+        await updateDoc(doc(db, "chats", chatId), { hasUnread: false });
       } catch (e) {}
     }
 
@@ -1361,6 +1427,11 @@
       const user = auth.currentUser;
       if (!user || !currentChatId) return;
 
+      if (userBlockedList.includes(currentChatOtherUserId)) {
+        alert("Você precisa desbloquear o usuário antes de enviar mensagens.");
+        return;
+      }
+
       const input = document.getElementById('chatInputMessage');
       const text = input.value.trim();
       if (!text) return;
@@ -1380,10 +1451,12 @@
           createdAt: new Date().toISOString()
         });
 
+        // Garante que o chat volte a ficar visível para o destinatário caso ele tenha apagado
         await updateDoc(doc(db, "chats", currentChatId), {
           lastMessage: text,
           lastSenderId: user.uid,
           hasUnread: true,
+          visibleTo: arrayUnion(user.uid, currentChatOtherUserId),
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -1395,7 +1468,8 @@
       const user = auth.currentUser;
       if (!user) return;
 
-      const chatsQuery = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
+      // Busca apenas chats em que o ID do usuário está no array 'visibleTo'
+      const chatsQuery = query(collection(db, "chats"), where("visibleTo", "array-contains", user.uid));
       onSnapshot(chatsQuery, (snapshot) => {
         if (snapshot.empty) {
           myChatsList.innerHTML = `<p style="color: var(--text-muted);">Você ainda não possui conversas.</p>`;
@@ -1404,18 +1478,22 @@
 
         myChatsList.innerHTML = snapshot.docs.map(docSnap => {
           const chat = docSnap.data();
+          const otherUserId = chat.participants.find(p => p !== user.uid) || user.uid;
+
+          if (userBlockedList.includes(otherUserId)) return '';
+
           const lastMsg = chat.lastMessage || 'Conversa iniciada...';
           const isUnread = chat.lastSenderId && chat.lastSenderId !== user.uid && chat.hasUnread;
 
           return `
             <div class="chat-item" style="${isUnread ? 'border-color: var(--primary-red); background: rgba(255,51,85,0.05);' : ''}">
-              <div style="flex: 1; cursor: pointer;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}')">
+              <div style="flex: 1; cursor: pointer;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">
                 <strong>📦 ${escapeHtml(chat.offerTitle)} ${isUnread ? '🔴' : ''}</strong>
                 <div style="font-size:0.8rem; color: var(--text-muted);">${escapeHtml(lastMsg)}</div>
               </div>
               <div style="display: flex; gap: 0.4rem;">
-                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}')">Abrir</button>
-                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="deleteChat('${docSnap.id}')">🗑️ Apagar</button>
+                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">Abrir</button>
+                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="deleteChatForMe('${docSnap.id}')">🗑️ Apagar</button>
               </div>
             </div>
           `;
@@ -1423,17 +1501,36 @@
       });
     }
 
-    window.deleteChat = async function(chatId) {
-      if (!confirm("Tem certeza que deseja apagar esta conversa? Esta ação não pode ser desfeita.")) return;
+    // APAGAR CONVERSA APENAS PARA QUEM SOLICITOU
+    window.deleteChatForMe = async function(chatId) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      if (!confirm("Deseja apagar esta conversa para você? (A outra pessoa continuará com o histórico)")) return;
 
       try {
-        const msgsRef = collection(db, "chats", chatId, "messages");
-        const msgsSnap = await getDocs(msgsRef);
-        const deletePromises = msgsSnap.docs.map(mDoc => deleteDoc(doc(db, "chats", chatId, "messages", mDoc.id)));
-        await Promise.all(deletePromises);
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
 
-        await deleteDoc(doc(db, "chats", chatId));
-        alert("Conversa apagada com sucesso!");
+        if (chatSnap.exists()) {
+          const chatData = chatSnap.data();
+          const visibleTo = chatData.visibleTo || [];
+
+          // Se ambos os usuários já removeram a visão, apaga do Firestore de vez
+          if (visibleTo.length <= 1) {
+            const msgsRef = collection(db, "chats", chatId, "messages");
+            const msgsSnap = await getDocs(msgsRef);
+            const deletePromises = msgsSnap.docs.map(mDoc => deleteDoc(doc(db, "chats", chatId, "messages", mDoc.id)));
+            await Promise.all(deletePromises);
+            await deleteDoc(chatRef);
+          } else {
+            // Apenas remove o usuário atual da lista de visualização
+            await updateDoc(chatRef, {
+              visibleTo: arrayRemove(user.uid)
+            });
+          }
+          alert("Conversa removida do seu perfil.");
+        }
       } catch (err) {
         alert("Erro ao apagar conversa: " + err.message);
       }
@@ -1589,7 +1686,7 @@
         await setDoc(doc(db, "users", userCred.user.uid), {
           uid: userCred.user.uid, name: formattedName, email: regEmail,
           city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
-          favorites: [],
+          favorites: [], blockedUsers: [],
           createdAt: new Date().toISOString()
         }, { merge: true });
         authModal.style.display = 'none';
