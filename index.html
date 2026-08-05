@@ -131,12 +131,7 @@
 
     .btn-gradient { background: var(--bg-gradient); color: #fff; }
     .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-    .btn-whatsapp { 
-      background: var(--whatsapp-green); 
-      color: #fff; 
-      font-weight: bold; 
-      white-space: nowrap;
-    }
+    .btn-chat { background: var(--primary-blue); color: #fff; font-weight: bold; white-space: nowrap; }
 
     .hero {
       background: var(--bg-gradient);
@@ -292,6 +287,95 @@
     .user-info { display: flex; flex-direction: column; }
     .user-location { font-size: 0.75rem; color: var(--text-muted); }
 
+    /* MODAL DE CHAT */
+    .chat-modal-card {
+      background: var(--dark-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 550px;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 1rem;
+      background: var(--dark-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .chat-message {
+      max-width: 75%;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .msg-sent {
+      align-self: flex-end;
+      background: var(--primary-blue);
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+
+    .msg-received {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-footer {
+      padding: 0.8rem;
+      background: var(--dark-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--dark-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 0.6rem 1rem;
+      color: #fff;
+      outline: none;
+    }
+
+    .chats-list-item {
+      background: var(--dark-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chats-list-item:hover {
+      border-color: var(--primary-blue);
+    }
+
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
@@ -307,7 +391,6 @@
     }
 
     .modal-close {
-      position: absolute; top: 1rem; right: 1rem;
       background: transparent; border: none; color: var(--text-muted);
       font-size: 1.5rem; cursor: pointer;
     }
@@ -376,6 +459,7 @@
       </a>
 
       <div class="nav-actions">
+        <button id="btnMyChatsNav" class="btn btn-outline auth-only">💬 Meus Chats</button>
         <button id="btnNewAd" class="btn btn-gradient auth-only">+ Anunciar Troca</button>
         <button id="btnAuthModal" class="btn btn-outline">Carregando...</button>
       </div>
@@ -419,10 +503,45 @@
     </div>
   </main>
 
+  <!-- MODAL DE LISTA DE CHATS -->
+  <div id="chatsListModal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2 class="modal-title" style="margin:0;">Minhas Conversas</h2>
+        <button class="modal-close" id="btnCloseChatsList">&times;</button>
+      </div>
+      <div id="userChatsContainer">
+        <p style="color:var(--text-muted);">Carregando suas conversas...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHAT PRIVADO -->
+  <div id="chatRoomModal" class="modal-overlay">
+    <div class="chat-modal-card">
+      <div class="chat-header">
+        <div>
+          <strong id="chatTargetName">Conversa</strong>
+          <div id="chatOfferTitle" style="font-size:0.75rem; color:var(--text-muted);">Negociação</div>
+        </div>
+        <button class="modal-close" id="btnCloseChatRoom">&times;</button>
+      </div>
+      <div class="chat-body" id="chatMessagesBox">
+        <!-- Mensagens via JS -->
+      </div>
+      <form class="chat-footer" id="formSendMsg">
+        <input type="text" id="chatMsgInput" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off" required />
+        <button type="submit" class="btn btn-gradient" style="padding: 0.6rem 1rem;">Enviar</button>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL PERFIL / MEUS ANÚNCIOS -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
-      <button class="modal-close" id="btnCloseModal">&times;</button>
+      <div style="text-align:right;">
+        <button class="modal-close" id="btnCloseModal">&times;</button>
+      </div>
       
       <!-- LOGIN -->
       <div id="loginFormContainer">
@@ -462,7 +581,6 @@
 
       <!-- MEU PERFIL E MEUS ANÚNCIOS -->
       <div id="profileFormContainer" style="display: none;">
-        
         <div class="profile-tabs">
           <button class="tab-btn active" id="tabInfoBtn">Minha Conta</button>
           <button class="tab-btn" id="tabAdsBtn">Meus Anúncios</button>
@@ -518,7 +636,6 @@
             <p style="color: var(--text-muted);">Carregando seus anúncios...</p>
           </div>
         </div>
-
       </div>
 
     </div>
@@ -527,7 +644,9 @@
   <!-- MODAL DE ANÚNCIO (CRIAR / EDITAR) -->
   <div id="newAdModal" class="modal-overlay">
     <div class="modal-card">
-      <button class="modal-close" id="btnCloseAdModal">&times;</button>
+      <div style="text-align:right;">
+        <button class="modal-close" id="btnCloseAdModal">&times;</button>
+      </div>
       <h2 class="modal-title" id="adModalTitle">Novo Anúncio de Troca</h2>
       
       <form id="formNewAd">
@@ -574,7 +693,7 @@
 
   <!-- VISUALIZADOR DE GALERIA -->
   <div id="galleryViewer" class="gallery-viewer-modal">
-    <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem;">&times;</button>
+    <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem; position:absolute;">&times;</button>
     <div class="gallery-img-container">
       <button class="gallery-nav-btn gallery-prev" id="btnPrevImg">&#10094;</button>
       <img id="galleryFullImg" class="gallery-img-full" src="" alt="Zoom Foto" />
@@ -596,7 +715,7 @@
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
       getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc,
-      collection, query, orderBy, onSnapshot 
+      collection, query, where, orderBy, onSnapshot, getDoc, serverTimestamp 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -614,10 +733,12 @@
     const db = getFirestore(app);
 
     let unsubscribeProfile = null;
+    let unsubscribeChatMessages = null;
     let currentUserData = null;
     let allOffers = [];
     let usersMap = {};
 
+    let activeChatId = null;
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
 
@@ -636,12 +757,17 @@
     const authModal = document.getElementById('authModal');
     const newAdModal = document.getElementById('newAdModal');
     const galleryViewer = document.getElementById('galleryViewer');
+    const chatsListModal = document.getElementById('chatsListModal');
+    const chatRoomModal = document.getElementById('chatRoomModal');
     
     const btnAuthModal = document.getElementById('btnAuthModal');
     const btnNewAd = document.getElementById('btnNewAd');
+    const btnMyChatsNav = document.getElementById('btnMyChatsNav');
     const btnCloseModal = document.getElementById('btnCloseModal');
     const btnCloseAdModal = document.getElementById('btnCloseAdModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
+    const btnCloseChatsList = document.getElementById('btnCloseChatsList');
+    const btnCloseChatRoom = document.getElementById('btnCloseChatRoom');
 
     const tabInfoBtn = document.getElementById('tabInfoBtn');
     const tabAdsBtn = document.getElementById('tabAdsBtn');
@@ -681,8 +807,18 @@
       newAdModal.style.display = 'flex';
     });
 
+    btnMyChatsNav.addEventListener('click', () => {
+      if (!auth.currentUser) return showModalTab('login');
+      openMyChatsList();
+    });
+
     btnCloseAdModal.addEventListener('click', () => newAdModal.style.display = 'none');
     btnCloseModal.addEventListener('click', () => authModal.style.display = 'none');
+    btnCloseChatsList.addEventListener('click', () => chatsListModal.style.display = 'none');
+    btnCloseChatRoom.addEventListener('click', () => {
+      if (unsubscribeChatMessages) unsubscribeChatMessages();
+      chatRoomModal.style.display = 'none';
+    });
 
     function showModalTab(tab) {
       document.getElementById('loginFormContainer').style.display = 'none';
@@ -715,9 +851,7 @@
         usersMap[docSnap.id] = docSnap.data();
       });
       renderOffers(allOffers);
-    }, (error) => {
-      // Falha silenciosa para deslogados
-    });
+    }, () => {});
 
     onAuthStateChanged(auth, (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
@@ -752,6 +886,144 @@
       document.getElementById('profPhone').value = data.phone || '';
       document.getElementById('profCity').value = data.city || '';
     }
+
+    /* SISTEMA DE CHAT PRIVADO NO SITE */
+    window.openChatWithUser = async function(targetUserId, offerTitle, targetName) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        showModalTab('login');
+        return;
+      }
+
+      if (currentUser.uid === targetUserId) {
+        alert("Você não pode iniciar um chat no próprio anúncio!");
+        return;
+      }
+
+      const chatId = [currentUser.uid, targetUserId].sort().join('_');
+      activeChatId = chatId;
+
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+
+      if (!chatSnap.exists()) {
+        await setDoc(chatRef, {
+          participants: [currentUser.uid, targetUserId],
+          participantNames: {
+            [currentUser.uid]: currentUserData?.name || currentUser.displayName || "Usuário",
+            [targetUserId]: targetName || "Anunciante"
+          },
+          offerTitle: offerTitle,
+          lastMessage: '',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      document.getElementById('chatTargetName').textContent = targetName || "Anunciante";
+      document.getElementById('chatOfferTitle').textContent = `Item: ${offerTitle}`;
+      chatRoomModal.style.display = 'flex';
+
+      loadChatMessages(chatId);
+    };
+
+    function loadChatMessages(chatId) {
+      if (unsubscribeChatMessages) unsubscribeChatMessages();
+
+      const msgsQuery = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+      const messagesBox = document.getElementById('chatMessagesBox');
+      messagesBox.innerHTML = "<p style='color:var(--text-muted);'>Carregando mensagens...</p>";
+
+      unsubscribeChatMessages = onSnapshot(msgsQuery, (snapshot) => {
+        messagesBox.innerHTML = '';
+        if (snapshot.empty) {
+          messagesBox.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Envie uma mensagem para iniciar a negociação.</p>";
+          return;
+        }
+
+        snapshot.forEach(docSnap => {
+          const msg = docSnap.data();
+          const isMe = msg.senderId === auth.currentUser.uid;
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `chat-message ${isMe ? 'msg-sent' : 'msg-received'}`;
+          msgDiv.textContent = msg.text;
+          messagesBox.appendChild(msgDiv);
+        });
+
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+      });
+    }
+
+    document.getElementById('formSendMsg').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chatMsgInput');
+      const text = input.value.trim();
+      const currentUser = auth.currentUser;
+
+      if (!text || !activeChatId || !currentUser) return;
+
+      if (containsForbiddenWords(text)) {
+        alert("Mensagem contém palavras não permitidas.");
+        return;
+      }
+
+      input.value = '';
+
+      await addDoc(collection(db, "chats", activeChatId, "messages"), {
+        senderId: currentUser.uid,
+        text: text,
+        createdAt: new Date().toISOString()
+      });
+
+      await updateDoc(doc(db, "chats", activeChatId), {
+        lastMessage: text,
+        updatedAt: new Date().toISOString()
+      });
+    });
+
+    function openMyChatsList() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const container = document.getElementById('userChatsContainer');
+      container.innerHTML = "<p style='color:var(--text-muted);'>Carregando conversas...</p>";
+      chatsListModal.style.display = 'flex';
+
+      const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
+      onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          container.innerHTML = "<p style='color:var(--text-muted);'>Nenhum chat ativo no momento.</p>";
+          return;
+        }
+
+        container.innerHTML = snapshot.docs.map(docSnap => {
+          const chatData = docSnap.data();
+          const otherUserId = chatData.participants.find(id => id !== user.uid);
+          const otherUserName = chatData.participantNames?.[otherUserId] || "Usuário";
+
+          return `
+            <div class="chats-list-item" onclick="openChatFromList('${docSnap.id}', '${escapeHtml(otherUserName)}', '${escapeHtml(chatData.offerTitle || 'Troca')}')">
+              <div>
+                <strong>👤 ${escapeHtml(otherUserName)}</strong>
+                <div style="font-size:0.8rem; color:var(--primary-blue);">📦 ${escapeHtml(chatData.offerTitle || '')}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">${escapeHtml(chatData.lastMessage || 'Sem mensagens')}</div>
+              </div>
+              <span style="font-size:0.8rem; color:var(--primary-blue);">Abrir Chat &rarr;</span>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    window.openChatFromList = function(chatId, otherUserName, offerTitle) {
+      activeChatId = chatId;
+      chatsListModal.style.display = 'none';
+
+      document.getElementById('chatTargetName').textContent = otherUserName;
+      document.getElementById('chatOfferTitle').textContent = `Item: ${offerTitle}`;
+      chatRoomModal.style.display = 'flex';
+
+      loadChatMessages(chatId);
+    };
 
     document.getElementById('formProfile').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -855,7 +1127,7 @@
 
         const userName = currentUserData?.name || user.displayName || "Usuário";
         const userCity = currentUserData?.city || "Brasil";
-        const userPhone = currentUserData?.phone || ""; // Atrelado para leitura de convidados
+        const userPhone = currentUserData?.phone || "";
 
         if (adId) {
           const existingOffer = allOffers.find(o => o.id === adId);
@@ -936,13 +1208,15 @@
         }
 
         const authorProfile = usersMap[offer.userId];
-        // Funciona tanto logado (busca no perfil atualizado) quanto deslogado (pega do próprio card)
         const currentPhone = authorProfile?.phone || offer.userPhone || '';
         const phoneClean = currentPhone.replace(/\D/g, '');
 
+        const authorName = authorProfile?.name || offer.userName;
+
         const waBtn = phoneClean ? 
-          `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-whatsapp" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📱 WhatsApp</a>` : 
-          `<span style="font-size:0.75rem; color:var(--text-muted);">Sem WhatsApp</span>`;
+          `<a href="https://wa.me/55${phoneClean}?text=Olá! Vi seu anúncio no Trocaê: ${encodeURIComponent(offer.title)}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; border-color: var(--whatsapp-green); color: var(--whatsapp-green);">📱 Whats</a>` : '';
+
+        const chatBtn = `<button class="btn btn-chat" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="openChatWithUser('${offer.userId}', '${escapeHtml(offer.title)}', '${escapeHtml(authorName)}')">💬 Conversar</button>`;
 
         return `
           <div class="card">
@@ -961,10 +1235,13 @@
               </div>
               <div class="card-footer">
                 <div class="user-info">
-                  <span>👤 ${escapeHtml(authorProfile?.name || offer.userName)}</span>
+                  <span>👤 ${escapeHtml(authorName)}</span>
                   <span class="user-location">📍 ${escapeHtml(authorProfile?.city || offer.userCity)}</span>
                 </div>
-                ${waBtn}
+                <div style="display:flex; gap:0.4rem;">
+                  ${waBtn}
+                  ${chatBtn}
+                </div>
               </div>
             </div>
           </div>
