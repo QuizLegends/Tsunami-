@@ -273,6 +273,8 @@
       color: var(--text-muted);
       line-height: 1.4;
       white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .card-desc-text.collapsed {
@@ -731,7 +733,7 @@
     </div>
   </div>
 
-  <!-- VISUALIZADOR DE GALERIA -->
+  <!-- VISUALIZADOR DE GALERIA EM TELA CHEIA (ZOOM) -->
   <div id="galleryViewer" class="gallery-viewer-modal">
     <button class="modal-close" id="btnCloseGallery" style="top: 2rem; right: 2rem;">&times;</button>
     <div class="gallery-img-container">
@@ -1267,7 +1269,7 @@
       }, 50);
     }
 
-    /* --- ABRIR DETALHES DO ANÚNCIO (COM GALERIA NAVEGÁVEL COMPLETA) --- */
+    /* --- ABRIR DETALHES DO ANÚNCIO (COM ZOOM E QUEBRA DE TEXTO CORRIGIDOS) --- */
     window.openAdDetails = function(offerId) {
       const offer = allOffers.find(o => o.id === offerId);
 
@@ -1293,10 +1295,10 @@
       if (modalAdImages.length > 0) {
         galleryHtml = `
           <div class="card-gallery-preview" style="margin-bottom: 1rem; border-radius: 8px; position: relative;">
-            <img id="viewAdMainImg" src="${modalAdImages[0]}" class="card-img" onclick="openGallery('${offer.id}', modalAdImageIndex)" style="cursor: pointer;" />
+            <img id="viewAdMainImg" src="${modalAdImages[0]}" class="card-img" onclick="openGallery('${offer.id}', modalAdImageIndex)" style="cursor: pointer;" title="Clique para ampliar" />
             ${modalAdImages.length > 1 ? `
-              <button onclick="navigateModalAdImg(-1, '${offer.id}')" class="gallery-nav-btn gallery-prev" style="left: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10094;</button>
-              <button onclick="navigateModalAdImg(1, '${offer.id}')" class="gallery-nav-btn gallery-next" style="right: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10095;</button>
+              <button onclick="navigateModalAdImg(-1, '${offer.id}', event)" class="gallery-nav-btn gallery-prev" style="left: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10094;</button>
+              <button onclick="navigateModalAdImg(1, '${offer.id}', event)" class="gallery-nav-btn gallery-next" style="right: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10095;</button>
               <div id="viewAdImgBadge" class="gallery-badge">📷 1/${modalAdImages.length}</div>
             ` : ''}
           </div>
@@ -1309,10 +1311,12 @@
       const viewContent = document.getElementById('viewAdContent');
       viewContent.innerHTML = `
         <span class="card-badge ${offer.type === 'servico' ? 'badge-servico' : 'badge-produto'}" style="margin-bottom:0.8rem;">${offer.type.toUpperCase()}</span>
-        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">${escapeHtml(offer.title)}</h2>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; word-break: break-word;">${escapeHtml(offer.title)}</h2>
         ${galleryHtml}
-        <p style="white-space: pre-wrap; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">${escapeHtml(offer.description)}</p>
-        <div class="card-wants" style="margin-bottom: 1.2rem;">
+        <div style="margin-bottom: 1rem;">
+          <p class="card-desc-text" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap;">${escapeHtml(offer.description)}</p>
+        </div>
+        <div class="card-wants" style="margin-bottom: 1.2rem; word-break: break-word;">
           🔄 <strong>Procura:</strong> ${escapeHtml(offer.wants)}
         </div>
         <div style="background: var(--dark-bg); padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
@@ -1331,7 +1335,8 @@
       viewAdModal.style.display = 'flex';
     };
 
-    window.navigateModalAdImg = function(direction, offerId) {
+    window.navigateModalAdImg = function(direction, offerId, e) {
+      if (e) e.stopPropagation();
       if (modalAdImages.length <= 1) return;
       modalAdImageIndex = (modalAdImageIndex + direction + modalAdImages.length) % modalAdImages.length;
       
@@ -1342,7 +1347,7 @@
       if (badgeEl) badgeEl.textContent = `📷 ${modalAdImageIndex + 1}/${modalAdImages.length}`;
     };
 
-    /* --- TOGGLE FAVORITOS INSTANTÂNEO EM TODOS OS LUGARES --- */
+    /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
       if (!user) {
@@ -1389,9 +1394,9 @@
 
         return `
           <div class="fav-item" id="fav-item-${favId}">
-            <div style="flex: 1; cursor: pointer;" onclick="openAdDetails('${favId}')">
-              <strong>${title}</strong>
-              <div style="font-size:0.75rem; color: var(--text-muted);">${sub}</div>
+            <div style="flex: 1; cursor: pointer; overflow: hidden;" onclick="openAdDetails('${favId}')">
+              <strong style="word-break: break-word;">${title}</strong>
+              <div style="font-size:0.75rem; color: var(--text-muted); word-break: break-word;">${sub}</div>
             </div>
             <div style="display:flex; gap: 0.4rem;">
               <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--primary-red); color: var(--primary-red);" onclick="toggleFavorite('${favId}')">❌ Remover</button>
@@ -1640,9 +1645,9 @@
 
           return `
             <div class="chat-item" style="${isUnread ? 'border-color: var(--primary-red); background: rgba(255,51,85,0.05);' : ''}">
-              <div style="flex: 1; cursor: pointer;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">
-                <strong>📦 ${escapeHtml(chat.offerTitle)} ${isUnread ? '🔴' : ''}</strong>
-                <div style="font-size:0.8rem; color: var(--text-muted);">${escapeHtml(lastMsg)}</div>
+              <div style="flex: 1; cursor: pointer; overflow: hidden;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">
+                <strong style="word-break: break-word;">📦 ${escapeHtml(chat.offerTitle)} ${isUnread ? '🔴' : ''}</strong>
+                <div style="font-size:0.8rem; color: var(--text-muted); word-break: break-word;">${escapeHtml(lastMsg)}</div>
               </div>
               <div style="display: flex; gap: 0.4rem;">
                 <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">Abrir</button>
@@ -1698,7 +1703,8 @@
       }
     };
 
-    function openGallery(offerId, startIndex) {
+    /* --- ABRIR GALERIA EM TELA CHEIA --- */
+    window.openGallery = function(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
 
@@ -1713,7 +1719,7 @@
       currentGalleryIndex = startIndex;
       updateGalleryView();
       galleryViewer.style.display = 'flex';
-    }
+    };
 
     function updateGalleryView() {
       if (currentGalleryImages.length === 0) return;
@@ -1751,9 +1757,9 @@
 
       myAdsList.innerHTML = myOffers.map(offer => `
         <div class="my-ad-item">
-          <div style="flex: 1; cursor: pointer;" onclick="openAdDetails('${offer.id}')">
-            <strong>${escapeHtml(offer.title)}</strong>
-            <div style="font-size:0.75rem; color: var(--text-muted);">${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}</div>
+          <div style="flex: 1; cursor: pointer; overflow: hidden;" onclick="openAdDetails('${offer.id}')">
+            <strong style="word-break: break-word;">${escapeHtml(offer.title)}</strong>
+            <div style="font-size:0.75rem; color: var(--text-muted); word-break: break-word;">${offer.type.toUpperCase()} • ${escapeHtml(offer.category)}</div>
           </div>
           <div style="display:flex; gap: 0.5rem;">
             <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="editAd('${offer.id}')">✏️ Editar</button>
