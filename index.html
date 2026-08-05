@@ -388,13 +388,13 @@
     .gallery-prev { left: 1rem; }
     .gallery-next { right: 1rem; }
 
-    .my-ad-item, .chat-item, .fav-item {
+    .my-ad-item, .chat-item, .fav-item, .blocked-item {
       background: var(--dark-bg); border: 1px solid var(--border-color);
       border-radius: 8px; padding: 0.8rem; margin-bottom: 0.8rem;
       display: flex; justify-content: space-between; align-items: center;
       gap: 0.5rem;
     }
-    .chat-item:hover, .fav-item:hover { border-color: var(--primary-blue); }
+    .chat-item:hover, .fav-item:hover, .blocked-item:hover { border-color: var(--primary-blue); }
 
     .chat-header-bar {
       display: flex;
@@ -517,7 +517,7 @@
     </div>
   </main>
 
-  <!-- MODAL PERFIL / MEUS ANÚNCIOS / HISTÓRICO DE CHATS / FAVORITOS -->
+  <!-- MODAL PERFIL / MEUS ANÚNCIOS / HISTÓRICO DE CHATS / FAVORITOS / BLOQUEADOS -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseModal">&times;</button>
@@ -557,7 +557,7 @@
         </p>
       </div>
 
-      <!-- MEU PERFIL, ANÚNCIOS, CHATS E FAVORITOS -->
+      <!-- MEU PERFIL, ANÚNCIOS, CHATS, FAVORITOS E BLOQUEADOS -->
       <div id="profileFormContainer" style="display: none;">
 
         <div class="profile-tabs">
@@ -565,6 +565,7 @@
           <button class="tab-btn" id="tabAdsBtn">Meus Anúncios</button>
           <button class="tab-btn" id="tabChatsBtn">Conversas <span id="tabChatsBadge" class="badge-unread" style="display:none;">0</span></button>
           <button class="tab-btn" id="tabFavsBtn">Favoritos ❤️</button>
+          <button class="tab-btn" id="tabBlockedBtn">Bloqueados 🚫</button>
         </div>
 
         <!-- ABA CONTA -->
@@ -631,6 +632,13 @@
         <div id="tabFavsContent" style="display: none;">
           <div id="myFavsList">
             <p style="color: var(--text-muted);">Carregando seus favoritos...</p>
+          </div>
+        </div>
+
+        <!-- ABA BLOQUEADOS -->
+        <div id="tabBlockedContent" style="display: none;">
+          <div id="myBlockedList">
+            <p style="color: var(--text-muted);">Carregando usuários bloqueados...</p>
           </div>
         </div>
 
@@ -799,15 +807,18 @@
     const tabAdsBtn = document.getElementById('tabAdsBtn');
     const tabChatsBtn = document.getElementById('tabChatsBtn');
     const tabFavsBtn = document.getElementById('tabFavsBtn');
+    const tabBlockedBtn = document.getElementById('tabBlockedBtn');
 
     const tabInfoContent = document.getElementById('tabInfoContent');
     const tabAdsContent = document.getElementById('tabAdsContent');
     const tabChatsContent = document.getElementById('tabChatsContent');
     const tabFavsContent = document.getElementById('tabFavsContent');
+    const tabBlockedContent = document.getElementById('tabBlockedContent');
 
     const myAdsList = document.getElementById('myAdsList');
     const myChatsList = document.getElementById('myChatsList');
     const myFavsList = document.getElementById('myFavsList');
+    const myBlockedList = document.getElementById('myBlockedList');
 
     const offersGrid = document.getElementById('offersGrid');
     const searchInput = document.getElementById('searchInput');
@@ -815,55 +826,52 @@
     const typeFilter = document.getElementById('typeFilter');
     const btnSearch = document.getElementById('btnSearch');
 
-    tabInfoBtn.addEventListener('click', () => {
-      tabInfoBtn.classList.add('active');
+    function resetTabs() {
+      tabInfoBtn.classList.remove('active');
       tabAdsBtn.classList.remove('active');
       tabChatsBtn.classList.remove('active');
       tabFavsBtn.classList.remove('active');
+      tabBlockedBtn.classList.remove('active');
 
-      tabInfoContent.style.display = 'block';
+      tabInfoContent.style.display = 'none';
       tabAdsContent.style.display = 'none';
       tabChatsContent.style.display = 'none';
       tabFavsContent.style.display = 'none';
+      tabBlockedContent.style.display = 'none';
+    }
+
+    tabInfoBtn.addEventListener('click', () => {
+      resetTabs();
+      tabInfoBtn.classList.add('active');
+      tabInfoContent.style.display = 'block';
     });
 
     tabAdsBtn.addEventListener('click', () => {
+      resetTabs();
       tabAdsBtn.classList.add('active');
-      tabInfoBtn.classList.remove('active');
-      tabChatsBtn.classList.remove('active');
-      tabFavsBtn.classList.remove('active');
-
-      tabInfoContent.style.display = 'none';
       tabAdsContent.style.display = 'block';
-      tabChatsContent.style.display = 'none';
-      tabFavsContent.style.display = 'none';
       renderMyAds();
     });
 
     tabChatsBtn.addEventListener('click', () => {
+      resetTabs();
       tabChatsBtn.classList.add('active');
-      tabInfoBtn.classList.remove('active');
-      tabAdsBtn.classList.remove('active');
-      tabFavsBtn.classList.remove('active');
-
-      tabInfoContent.style.display = 'none';
-      tabAdsContent.style.display = 'none';
       tabChatsContent.style.display = 'block';
-      tabFavsContent.style.display = 'none';
       renderMyChats();
     });
 
     tabFavsBtn.addEventListener('click', () => {
+      resetTabs();
       tabFavsBtn.classList.add('active');
-      tabInfoBtn.classList.remove('active');
-      tabAdsBtn.classList.remove('active');
-      tabChatsBtn.classList.remove('active');
-
-      tabInfoContent.style.display = 'none';
-      tabAdsContent.style.display = 'none';
-      tabChatsContent.style.display = 'none';
       tabFavsContent.style.display = 'block';
       renderMyFavs();
+    });
+
+    tabBlockedBtn.addEventListener('click', () => {
+      resetTabs();
+      tabBlockedBtn.classList.add('active');
+      tabBlockedContent.style.display = 'block';
+      renderMyBlocked();
     });
 
     btnNewAd.addEventListener('click', () => {
@@ -932,6 +940,8 @@
             userBlockedList = currentUserData.blockedUsers || [];
             renderProfileData(currentUserData);
             renderOffers(allOffers);
+            if (tabFavsContent.style.display === 'block') renderMyFavs();
+            if (tabBlockedContent.style.display === 'block') renderMyBlocked();
           }
         });
 
@@ -967,7 +977,7 @@
       const name = currentUserData?.name || auth.currentUser?.displayName || 'Usuário';
 
       if (unreadCount > 0) {
-        btnAuthModal.textContent = `🔔 ${name} (${unreadCount})`;
+        btnAuthModal.textContent = `🔴 ${name} (${unreadCount})`;
         tabBadge.textContent = unreadCount;
         tabBadge.style.display = 'inline-block';
       } else {
@@ -1139,7 +1149,6 @@
     });
 
     function renderOffers(offers) {
-      // FILTRA ANÚNCIOS DE USUÁRIOS BLOQUEADOS
       const visibleOffers = offers.filter(o => !userBlockedList.includes(o.userId));
 
       if (visibleOffers.length === 0) {
@@ -1238,6 +1247,7 @@
       }, 50);
     }
 
+    /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
       if (!user) {
@@ -1254,6 +1264,7 @@
 
       userFavorites = updatedFavs;
       renderOffers(allOffers);
+      renderMyFavs(); // Atualiza a aba de favoritos na hora caso ela esteja aberta!
 
       try {
         await updateDoc(doc(db, "users", user.uid), { favorites: updatedFavs });
@@ -1290,6 +1301,47 @@
       `).join('');
     }
 
+    /* --- RENDERIZAÇÃO DA ABA BLOQUEADOS E DESBLOQUEIO --- */
+    function renderMyBlocked() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      if (userBlockedList.length === 0) {
+        myBlockedList.innerHTML = `<p style="color: var(--text-muted);">Nenhum usuário bloqueado no momento.</p>`;
+        return;
+      }
+
+      myBlockedList.innerHTML = userBlockedList.map(blockedUid => {
+        const name = usersMap[blockedUid]?.name || "Usuário Bloqueado";
+        return `
+          <div class="blocked-item">
+            <div>
+              <strong>👤 ${escapeHtml(name)}</strong>
+            </div>
+            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: var(--whatsapp-green); color: var(--whatsapp-green);" onclick="unblockUserDirect('${blockedUid}')">
+              🟢 Desbloquear
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.unblockUserDirect = async function(uidToUnblock) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          blockedUsers: arrayRemove(uidToUnblock)
+        });
+        alert("Usuário desbloqueado com sucesso!");
+        renderOffers(allOffers);
+        renderMyBlocked();
+      } catch (err) {
+        alert("Erro ao desbloquear usuário: " + err.message);
+      }
+    };
+
     /* --- LÓGICA DO CHAT + BLOQUEIO + EXCLUSÃO INDIVIDUAL --- */
     window.openChatForOffer = async function(offerId, ownerId) {
       const user = auth.currentUser;
@@ -1315,7 +1367,7 @@
         offerId: offerId,
         offerTitle: offer.title,
         participants: [user.uid, ownerId],
-        visibleTo: arrayUnion(user.uid, ownerId), // Garante visibilidade para ambos ao recriar/interagir
+        visibleTo: arrayUnion(user.uid, ownerId),
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
@@ -1451,7 +1503,6 @@
           createdAt: new Date().toISOString()
         });
 
-        // Garante que o chat volte a ficar visível para o destinatário caso ele tenha apagado
         await updateDoc(doc(db, "chats", currentChatId), {
           lastMessage: text,
           lastSenderId: user.uid,
@@ -1468,7 +1519,6 @@
       const user = auth.currentUser;
       if (!user) return;
 
-      // Busca apenas chats em que o ID do usuário está no array 'visibleTo'
       const chatsQuery = query(collection(db, "chats"), where("visibleTo", "array-contains", user.uid));
       onSnapshot(chatsQuery, (snapshot) => {
         if (snapshot.empty) {
@@ -1501,7 +1551,6 @@
       });
     }
 
-    // APAGAR CONVERSA APENAS PARA QUEM SOLICITOU
     window.deleteChatForMe = async function(chatId) {
       const user = auth.currentUser;
       if (!user) return;
@@ -1516,7 +1565,6 @@
           const chatData = chatSnap.data();
           const visibleTo = chatData.visibleTo || [];
 
-          // Se ambos os usuários já removeram a visão, apaga do Firestore de vez
           if (visibleTo.length <= 1) {
             const msgsRef = collection(db, "chats", chatId, "messages");
             const msgsSnap = await getDocs(msgsRef);
@@ -1524,7 +1572,6 @@
             await Promise.all(deletePromises);
             await deleteDoc(chatRef);
           } else {
-            // Apenas remove o usuário atual da lista de visualização
             await updateDoc(chatRef, {
               visibleTo: arrayRemove(user.uid)
             });
