@@ -1038,7 +1038,7 @@
       const name = currentUserData?.name || auth.currentUser?.displayName || 'Usuário';
 
       if (unreadCount > 0) {
-        btnAuthModal.textContent = `🔴 ${name} (${unreadCount})`;
+        btnAuthModal.textContent = `🔔 ${name} (${unreadCount})`;
         tabBadge.textContent = unreadCount;
         tabBadge.style.display = 'inline-block';
       } else {
@@ -1942,7 +1942,7 @@
         await sendEmailVerification(user);
         await signOut(auth);
 
-        alert("Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme o e-mail antes de fazer login.");
+        alert("Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme o e-mail antes de fazer login.(⚠️Verifique sua caixa de Span!)");
         showModalTab('login');
       } catch (err) { 
         if (err.code === 'auth/email-already-in-use') {
