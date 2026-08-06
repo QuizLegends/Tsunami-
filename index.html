@@ -463,6 +463,16 @@
     }
 
     .auth-only { display: none; }
+
+    .notice-box {
+      background: rgba(0, 136, 255, 0.1);
+      border: 1px solid var(--primary-blue);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
   </style>
 </head>
 <body>
@@ -519,7 +529,7 @@
     </div>
   </main>
 
-  <!-- MODAL PERFIL / MEUS ANÚNCIOS / HISTÓRICO DE CHATS / FAVORITOS / BLOQUEADOS -->
+  <!-- MODAL PERFIL / LOGIN / CADASTRO -->
   <div id="authModal" class="modal-overlay">
     <div class="modal-card">
       <button class="modal-close" id="btnCloseModal">&times;</button>
@@ -527,10 +537,16 @@
       <!-- LOGIN -->
       <div id="loginFormContainer">
         <h2 class="modal-title">Entrar no Trocaê</h2>
+        
+        <div id="unverifiedNotice" class="notice-box" style="display: none; border-color: var(--primary-red); background: rgba(255, 51, 85, 0.1);">
+          ⚠️ Sua conta ainda não foi verificada. Acesse seu e-mail e clique no link enviado.
+          <button id="btnResendEmail" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem; justify-content: center; font-size: 0.8rem;">📩 Reenviar Link de Confirmação</button>
+        </div>
+
         <form id="formLogin">
           <input type="email" id="loginEmail" class="form-input" placeholder="E-mail" required />
           <input type="password" id="loginPassword" class="form-input" placeholder="Senha" required />
-          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;">Entrar</button>
+          <button type="submit" id="btnSubmitLogin" class="btn btn-gradient" style="width: 100%; justify-content: center;">Entrar</button>
         </form>
         <div style="margin: 1rem 0; text-align: center; color: var(--text-muted);">ou</div>
         <button id="btnGoogleAuth" class="btn btn-outline" style="width: 100%; justify-content: center;">
@@ -545,13 +561,18 @@
       <!-- CADASTRO -->
       <div id="registerFormContainer" style="display: none;">
         <h2 class="modal-title">Criar Conta no Trocaê</h2>
+        
+        <div class="notice-box">
+          ℹ️ Enviaremos um link de confirmação para o seu e-mail para garantir a segurança da conta.
+        </div>
+
         <form id="formRegister">
           <input type="text" id="regName" class="form-input" placeholder="Nome e Sobrenome" required />
           <input type="email" id="regEmail" class="form-input" placeholder="E-mail" required />
           <input type="password" id="regPassword" class="form-input" placeholder="Senha (min. 6 caracteres)" required />
           <input type="text" id="regCity" class="form-input" placeholder="Sua Cidade (Ex: Jaboatão, Recife)" required />
           <input type="tel" id="regPhone" class="form-input" placeholder="WhatsApp (DDD + Número)" required />
-          <button type="submit" class="btn btn-gradient" style="width: 100%; justify-content: center;">Criar Conta</button>
+          <button type="submit" id="btnSubmitRegister" class="btn btn-gradient" style="width: 100%; justify-content: center;">Criar Conta</button>
         </form>
 
         <p class="modal-toggle" style="text-align: center; margin-top: 1rem;">
@@ -753,7 +774,8 @@
     import {
       getAuth, onAuthStateChanged, signInWithEmailAndPassword,
       createUserWithEmailAndPassword, signInWithRedirect,
-      updateProfile, updateEmail, GoogleAuthProvider, signOut
+      updateProfile, updateEmail, GoogleAuthProvider, signOut,
+      sendEmailVerification
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import {
       getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc,
@@ -790,6 +812,7 @@
 
     let modalAdImages = [];
     let modalAdImageIndex = 0;
+    let unverifiedUserTemp = null;
 
     const FORBIDDEN_WORDS = [
       "porra", "caralho", "puta", "puto", "foder", "foda", "buceta", "pica",
@@ -817,6 +840,8 @@
     const btnCloseViewAdModal = document.getElementById('btnCloseViewAdModal');
     const btnLogoutModal = document.getElementById('btnLogoutModal');
     const btnBlockUser = document.getElementById('btnBlockUser');
+    const btnResendEmail = document.getElementById('btnResendEmail');
+    const unverifiedNotice = document.getElementById('unverifiedNotice');
 
     const tabInfoBtn = document.getElementById('tabInfoBtn');
     const tabAdsBtn = document.getElementById('tabAdsBtn');
@@ -890,7 +915,7 @@
     });
 
     btnNewAd.addEventListener('click', () => {
-      if (!auth.currentUser) {
+      if (!auth.currentUser || !auth.currentUser.emailVerified) {
         showModalTab('login');
         return;
       }
@@ -929,7 +954,7 @@
     }
 
     btnAuthModal.addEventListener('click', () => {
-      if (auth.currentUser) showModalTab('profile');
+      if (auth.currentUser && auth.currentUser.emailVerified) showModalTab('profile');
       else showModalTab('login');
     });
 
@@ -948,11 +973,24 @@
       renderOffers(allOffers);
     });
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (unsubscribeProfile) unsubscribeProfile();
       if (unsubscribeUnreadChats) unsubscribeUnreadChats();
 
       if (user) {
+        await user.reload(); // Atualiza o status do e-mail do Firebase Auth
+        
+        // SE O E-MAIL NÃO FOI VERIFICADO
+        if (!user.emailVerified) {
+          btnAuthModal.textContent = "Entrar / Cadastrar";
+          currentUserData = null;
+          userFavorites = [];
+          userBlockedList = [];
+          document.querySelectorAll('.auth-only').forEach(el => el.style.display = 'none');
+          return;
+        }
+
+        unverifiedNotice.style.display = 'none';
         document.querySelectorAll('.auth-only').forEach(el => el.style.display = 'inline-flex');
         const userRef = doc(db, "users", user.uid);
         unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
@@ -1041,6 +1079,8 @@
 
         if (newEmail !== user.email) {
           await updateEmail(user, newEmail);
+          await sendEmailVerification(user);
+          alert("E-mail alterado! Reenviamos um link de verificação para o seu novo e-mail.");
         }
 
         await updateDoc(doc(db, "users", user.uid), {
@@ -1098,7 +1138,7 @@
     document.getElementById('formNewAd').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user || !user.emailVerified) return;
 
       const adId = document.getElementById('editingAdId').value;
       const title = document.getElementById('adTitle').value.trim();
@@ -1269,7 +1309,6 @@
       }, 50);
     }
 
-    /* --- ABRIR DETALHES DO ANÚNCIO (COM ZOOM E NAVEGAÇÃO FUNCIONANDO PERFEITAMENTE) --- */
     window.openAdDetails = function(offerId) {
       const offer = allOffers.find(o => o.id === offerId);
 
@@ -1355,10 +1394,9 @@
       galleryViewer.style.display = 'flex';
     };
 
-    /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
     window.toggleFavorite = async function(offerId) {
       const user = auth.currentUser;
-      if (!user) {
+      if (!user || !user.emailVerified) {
         showModalTab('login');
         return;
       }
@@ -1387,7 +1425,7 @@
 
     function renderMyFavs() {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user || !user.emailVerified) return;
 
       if (userFavorites.length === 0) {
         myFavsList.innerHTML = `<p style="color: var(--text-muted);">Você não tem anúncios nos favoritos.</p>`;
@@ -1416,7 +1454,7 @@
 
     function renderMyBlocked() {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user || !user.emailVerified) return;
 
       if (userBlockedList.length === 0) {
         myBlockedList.innerHTML = `<p style="color: var(--text-muted);">Nenhum usuário bloqueado no momento.</p>`;
@@ -1456,7 +1494,7 @@
 
     window.openChatForOffer = async function(offerId, ownerId) {
       const user = auth.currentUser;
-      if (!user) {
+      if (!user || !user.emailVerified) {
         showModalTab('login');
         return;
       }
@@ -1593,7 +1631,7 @@
     document.getElementById('formSendMessage').addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = auth.currentUser;
-      if (!user || !currentChatId) return;
+      if (!user || !user.emailVerified || !currentChatId) return;
 
       if (userBlockedList.includes(currentChatOtherUserId)) {
         alert("Você precisa desbloquear o usuário antes de enviar mensagens.");
@@ -1633,7 +1671,7 @@
 
     function renderMyChats() {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user || !user.emailVerified) return;
 
       const chatsQuery = query(collection(db, "chats"), where("visibleTo", "array-contains", user.uid));
       onSnapshot(chatsQuery, (snapshot) => {
@@ -1711,7 +1749,6 @@
       }
     };
 
-    /* --- ABRIR GALERIA EM TELA CHEIA (TELA PRINCIPAL) --- */
     window.openGallery = function(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
@@ -1755,7 +1792,7 @@
 
     function renderMyAds() {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user || !user.emailVerified) return;
 
       const myOffers = allOffers.filter(o => o.userId === user.uid);
       if (myOffers.length === 0) {
@@ -1828,14 +1865,53 @@
       return text.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
     }
 
+    /* --- LOGIN COM VERIFICAÇÃO DE E-MAIL --- */
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const btn = document.getElementById('btnSubmitLogin');
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+
       try {
-        await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+        const userCred = await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+        const user = userCred.user;
+        await user.reload();
+
+        if (!user.emailVerified) {
+          unverifiedUserTemp = user;
+          unverifiedNotice.style.display = 'block';
+          await signOut(auth);
+          return;
+        }
+
+        unverifiedNotice.style.display = 'none';
         authModal.style.display = 'none';
-      } catch (err) { alert("Erro: " + err.message); }
+      } catch (err) { 
+        if (err.code === 'auth/invalid-credential') {
+          alert("E-mail ou senha incorretos.");
+        } else {
+          alert("Erro no login: " + err.message); 
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
     });
 
+    btnResendEmail.addEventListener('click', async () => {
+      if (unverifiedUserTemp) {
+        try {
+          await sendEmailVerification(unverifiedUserTemp);
+          alert("Um novo link de confirmação foi enviado para o seu e-mail!");
+        } catch (err) {
+          alert("Erro ao reenviar e-mail: Aguarde um momento antes de tentar novamente.");
+        }
+      } else {
+        alert("Por favor, preencha o login e a senha primeiro.");
+      }
+    });
+
+    /* --- CADASTRO COM ENVIO DE LINK DE VERIFICAÇÃO --- */
     document.getElementById('formRegister').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('regName').value.trim();
@@ -1844,17 +1920,39 @@
 
       const formattedName = `${nameParts[0]} ${nameParts[1]}`;
       const regEmail = document.getElementById('regEmail').value.trim();
+      const btn = document.getElementById('btnSubmitRegister');
+      
+      btn.disabled = true;
+      btn.textContent = "Criando conta...";
+
       try {
         const userCred = await createUserWithEmailAndPassword(auth, regEmail, document.getElementById('regPassword').value);
-        await updateProfile(userCred.user, { displayName: formattedName });
-        await setDoc(doc(db, "users", userCred.user.uid), {
-          uid: userCred.user.uid, name: formattedName, email: regEmail,
+        const user = userCred.user;
+
+        await updateProfile(user, { displayName: formattedName });
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid, name: formattedName, email: regEmail,
           city: document.getElementById('regCity').value, phone: document.getElementById('regPhone').value,
           favorites: [], blockedUsers: [],
           createdAt: new Date().toISOString()
         }, { merge: true });
-        authModal.style.display = 'none';
-      } catch (err) { alert("Erro: " + err.message); }
+
+        // Envia o link de verificação
+        await sendEmailVerification(user);
+        await signOut(auth);
+
+        alert("Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme o e-mail antes de fazer login.");
+        showModalTab('login');
+      } catch (err) { 
+        if (err.code === 'auth/email-already-in-use') {
+          alert("Este e-mail já está cadastrado em outra conta.");
+        } else {
+          alert("Erro ao criar conta: " + err.message); 
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Criar Conta";
+      }
     });
 
     document.getElementById('btnGoogleAuth').addEventListener('click', () => signInWithRedirect(auth, new GoogleAuthProvider()));
