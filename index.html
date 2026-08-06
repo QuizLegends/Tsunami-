@@ -549,10 +549,6 @@
           <input type="password" id="loginPassword" class="form-input" placeholder="Senha" required />
           <button type="submit" id="btnSubmitLogin" class="btn btn-gradient" style="width: 100%; justify-content: center;">Entrar</button>
         </form>
-        <div style="margin: 1rem 0; text-align: center; color: var(--text-muted);">ou</div>
-        <button id="btnGoogleAuth" class="btn btn-outline" style="width: 100%; justify-content: center;">
-          Continuar com Google
-        </button>
 
         <p class="modal-toggle" style="text-align: center; margin-top: 1rem;">
           Não tem conta? <a href="#" id="linkToRegister" style="color: var(--primary-blue);">Cadastre-se</a>
@@ -1957,7 +1953,6 @@
       }
     });
 
-    document.getElementById('btnGoogleAuth').addEventListener('click', () => signInWithRedirect(auth, new GoogleAuthProvider()));
     document.getElementById('linkToRegister').addEventListener('click', (e) => { e.preventDefault(); showModalTab('register'); });
     document.getElementById('linkToLogin').addEventListener('click', (e) => { e.preventDefault(); showModalTab('login'); });
     document.getElementById('btnEnableEdit').addEventListener('click', () => {
