@@ -369,7 +369,7 @@
 
     .gallery-viewer-modal {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.95); z-index: 2000;
+      background: rgba(0,0,0,0.95); z-index: 2500;
       display: none; flex-direction: column;
       justify-content: center; align-items: center;
     }
@@ -1269,7 +1269,7 @@
       }, 50);
     }
 
-    /* --- ABRIR DETALHES DO ANÚNCIO (COM ZOOM E QUEBRA DE TEXTO CORRIGIDOS) --- */
+    /* --- ABRIR DETALHES DO ANÚNCIO (COM ZOOM E NAVEGAÇÃO FUNCIONANDO PERFEITAMENTE) --- */
     window.openAdDetails = function(offerId) {
       const offer = allOffers.find(o => o.id === offerId);
 
@@ -1295,10 +1295,10 @@
       if (modalAdImages.length > 0) {
         galleryHtml = `
           <div class="card-gallery-preview" style="margin-bottom: 1rem; border-radius: 8px; position: relative;">
-            <img id="viewAdMainImg" src="${modalAdImages[0]}" class="card-img" onclick="openGallery('${offer.id}', modalAdImageIndex)" style="cursor: pointer;" title="Clique para ampliar" />
+            <img id="viewAdMainImg" src="${modalAdImages[0]}" class="card-img" onclick="openModalGalleryZoom()" style="cursor: zoom-in;" title="Clique para ampliar em tela cheia" />
             ${modalAdImages.length > 1 ? `
-              <button onclick="navigateModalAdImg(-1, '${offer.id}', event)" class="gallery-nav-btn gallery-prev" style="left: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10094;</button>
-              <button onclick="navigateModalAdImg(1, '${offer.id}', event)" class="gallery-nav-btn gallery-next" style="right: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10095;</button>
+              <button onclick="navigateModalAdImg(-1, event)" class="gallery-nav-btn gallery-prev" style="left: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10094;</button>
+              <button onclick="navigateModalAdImg(1, event)" class="gallery-nav-btn gallery-next" style="right: 8px; padding: 0.5rem 0.8rem; font-size: 1rem;">&#10095;</button>
               <div id="viewAdImgBadge" class="gallery-badge">📷 1/${modalAdImages.length}</div>
             ` : ''}
           </div>
@@ -1335,7 +1335,7 @@
       viewAdModal.style.display = 'flex';
     };
 
-    window.navigateModalAdImg = function(direction, offerId, e) {
+    window.navigateModalAdImg = function(direction, e) {
       if (e) e.stopPropagation();
       if (modalAdImages.length <= 1) return;
       modalAdImageIndex = (modalAdImageIndex + direction + modalAdImages.length) % modalAdImages.length;
@@ -1345,6 +1345,14 @@
       
       if (imgEl) imgEl.src = modalAdImages[modalAdImageIndex];
       if (badgeEl) badgeEl.textContent = `📷 ${modalAdImageIndex + 1}/${modalAdImages.length}`;
+    };
+
+    window.openModalGalleryZoom = function() {
+      if (modalAdImages.length === 0) return;
+      currentGalleryImages = modalAdImages;
+      currentGalleryIndex = modalAdImageIndex;
+      updateGalleryView();
+      galleryViewer.style.display = 'flex';
     };
 
     /* --- TOGGLE FAVORITOS INSTANTÂNEO --- */
@@ -1703,7 +1711,7 @@
       }
     };
 
-    /* --- ABRIR GALERIA EM TELA CHEIA --- */
+    /* --- ABRIR GALERIA EM TELA CHEIA (TELA PRINCIPAL) --- */
     window.openGallery = function(offerId, startIndex) {
       const offer = allOffers.find(o => o.id === offerId);
       if (!offer) return;
