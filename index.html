@@ -1693,7 +1693,7 @@
           return `
             <div class="chat-item" style="${isUnread ? 'border-color: var(--primary-red); background: rgba(255,51,85,0.05);' : ''}">
               <div style="flex: 1; cursor: pointer; overflow: hidden;" onclick="openExistingChat('${docSnap.id}', '${escapeHtml(chat.offerTitle)}', '${otherUserId}')">
-                <strong style="word-break: break-word;">📦 ${escapeHtml(chat.offerTitle)} ${isUnread ? '🔴' : ''}</strong>
+                <strong style="word-break: break-word;">📦 ${escapeHtml(chat.offerTitle)} ${isUnread ? '🔔' : ''}</strong>
                 <div style="font-size:0.8rem; color: var(--text-muted); word-break: break-word;">${escapeHtml(lastMsg)}</div>
               </div>
               <div style="display: flex; gap: 0.4rem;">
